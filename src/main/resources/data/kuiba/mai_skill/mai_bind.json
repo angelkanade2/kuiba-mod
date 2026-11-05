@@ -1,0 +1,12 @@
+{
+  "id": "kuiba:mai_bind",
+  "category": "control",
+  "unlock_gate": 4,
+  "cost": 24,
+  "cooldown_ticks": 80,
+  "cast": "debuff",
+  "power": 1,
+  "icon": "kuiba:textures/skill/mai_bind.png",
+  "range": 8,
+  "duration_ticks": 40
+}

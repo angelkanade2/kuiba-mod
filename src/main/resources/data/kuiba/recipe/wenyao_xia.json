@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "kuiba:wenyao_blank"
+    },
+    {
+      "item": "kuiba:mai_ingot"
+    },
+    {
+      "item": "kuiba:mai_ingot"
+    },
+    {
+      "item": "kuiba:mai_shard"
+    },
+    {
+      "item": "kuiba:mai_shard"
+    }
+  ],
+  "result": {
+    "id": "kuiba:wenyao_xia",
+    "count": 1
+  }
+}

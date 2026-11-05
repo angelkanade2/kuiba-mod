@@ -1,0 +1,10 @@
+{
+  "id": "kuiba:art_pierce_mai",
+  "unlock_gate": 3,
+  "cost": 14,
+  "cooldown_ticks": 90,
+  "cast": "pierce",
+  "weapon": "kuiba:spear_mai_condense",
+  "range": 6,
+  "power": 10
+}

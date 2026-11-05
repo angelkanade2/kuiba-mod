@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:pulse_strike",
+  "category": "attack",
+  "unlock_gate": 0,
+  "cost": 18,
+  "cooldown_ticks": 20,
+  "cast": "melee",
+  "power": 4,
+  "icon": "kuiba:textures/skill/pulse_strike.png",
+  "range": 3
+}

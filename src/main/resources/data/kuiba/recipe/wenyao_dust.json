@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "kuiba:mai_crystal"
+    },
+    {
+      "item": "kuiba:mai_crystal"
+    },
+    {
+      "item": "minecraft:amethyst_shard"
+    }
+  ],
+  "result": {
+    "id": "kuiba:wenyao_dust",
+    "count": 1
+  }
+}

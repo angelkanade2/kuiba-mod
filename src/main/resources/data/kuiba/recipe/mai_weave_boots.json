@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "I I",
+    "L L"
+  ],
+  "key": {
+    "I": {
+      "item": "kuiba:mai_ingot"
+    },
+    "L": {
+      "item": "minecraft:leather"
+    }
+  },
+  "result": {
+    "id": "kuiba:mai_weave_boots",
+    "count": 1
+  }
+}

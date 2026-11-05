@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CC ",
+    "III",
+    " T "
+  ],
+  "key": {
+    "C": {
+      "item": "kuiba:mai_crystal"
+    },
+    "I": {
+      "item": "kuiba:mai_ingot"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "id": "kuiba:blade_pulse_rift",
+    "count": 1
+  }
+}

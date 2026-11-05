@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:pulse_wave",
+  "category": "attack",
+  "unlock_gate": 3,
+  "cost": 24,
+  "cooldown_ticks": 80,
+  "cast": "wave",
+  "power": 4,
+  "icon": "kuiba:textures/skill/pulse_wave.png",
+  "range": 10
+}

@@ -1,0 +1,50 @@
+{
+  "open_mai_gate_x1": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x1"]
+  },
+  "open_mai_gate_x2": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x2"]
+  },
+  "open_mai_gate_x3": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x3"]
+  },
+  "open_mai_gate_x4": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x4"]
+  },
+  "open_mai_gate_x5": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x5"]
+  },
+  "open_mai_gate_x6": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x6"]
+  },
+  "open_mai_gate_x7": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x7"]
+  },
+  "open_mai_gate_x8": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x8"]
+  },
+  "open_mai_gate_x9": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x9"]
+  },
+  "open_mai_gate_x10": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x10"]
+  },
+  "open_mai_gate_x11": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x11"]
+  },
+  "open_mai_gate_x12": {
+    "subtitle": "subtitles.kuiba.open_mai_gate",
+    "sounds": ["kuiba:open_mai_gate_x12"]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "kuiba:wenyao_blank"
+    },
+    {
+      "item": "kuiba:mai_core"
+    },
+    {
+      "item": "minecraft:diamond"
+    },
+    {
+      "item": "minecraft:diamond"
+    }
+  ],
+  "result": {
+    "id": "kuiba:wenyao_jiang",
+    "count": 1
+  }
+}

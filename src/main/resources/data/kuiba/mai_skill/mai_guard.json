@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:mai_guard",
+  "category": "defense",
+  "unlock_gate": 2,
+  "cost": 20,
+  "cooldown_ticks": 80,
+  "cast": "buff",
+  "power": 1,
+  "icon": "kuiba:textures/skill/mai_guard.png",
+  "duration_ticks": 60
+}

@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:pulse_flash",
+  "category": "mobility",
+  "unlock_gate": 0,
+  "cost": 12,
+  "cooldown_ticks": 30,
+  "cast": "dash",
+  "power": 1.2,
+  "icon": "kuiba:textures/skill/pulse_flash.png",
+  "range": 5
+}

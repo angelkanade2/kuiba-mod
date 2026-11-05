@@ -1,0 +1,10 @@
+{
+  "id": "kuiba:mai_mend",
+  "category": "support",
+  "unlock_gate": 1,
+  "cost": 25,
+  "cooldown_ticks": 60,
+  "cast": "heal",
+  "power": 4,
+  "icon": "kuiba:textures/skill/mai_mend.png"
+}

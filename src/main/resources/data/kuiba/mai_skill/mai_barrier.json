@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:mai_barrier",
+  "category": "defense",
+  "unlock_gate": 5,
+  "cost": 30,
+  "cooldown_ticks": 120,
+  "cast": "shield",
+  "power": 4,
+  "icon": "kuiba:textures/skill/mai_barrier.png",
+  "duration_ticks": 60
+}

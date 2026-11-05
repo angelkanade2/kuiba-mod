@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:pulse_bolt",
+  "category": "attack",
+  "unlock_gate": 2,
+  "cost": 22,
+  "cooldown_ticks": 30,
+  "cast": "projectile",
+  "power": 5,
+  "icon": "kuiba:textures/skill/pulse_bolt.png",
+  "range": 24
+}

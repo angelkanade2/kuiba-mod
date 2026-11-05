@@ -1,0 +1,10 @@
+{
+  "id": "kuiba:art_rift_flash",
+  "unlock_gate": 2,
+  "cost": 11,
+  "cooldown_ticks": 70,
+  "cast": "rift_flash",
+  "weapon": "kuiba:blade_pulse_rift",
+  "range": 2,
+  "power": 8
+}

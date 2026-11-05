@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "kuiba:wenyao_blank"
+    },
+    {
+      "item": "kuiba:mai_crystal"
+    },
+    {
+      "item": "kuiba:mai_crystal"
+    },
+    {
+      "item": "kuiba:mai_crystal"
+    },
+    {
+      "item": "kuiba:mai_crystal"
+    }
+  ],
+  "result": {
+    "id": "kuiba:wenyao_common",
+    "count": 1
+  }
+}

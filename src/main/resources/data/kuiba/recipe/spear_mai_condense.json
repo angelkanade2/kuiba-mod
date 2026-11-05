@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CCC",
+    "SII",
+    " TT"
+  ],
+  "key": {
+    "C": {
+      "item": "kuiba:mai_crystal"
+    },
+    "S": {
+      "item": "kuiba:mai_shard"
+    },
+    "I": {
+      "item": "kuiba:mai_ingot"
+    },
+    "T": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "id": "kuiba:spear_mai_condense",
+    "count": 1
+  }
+}

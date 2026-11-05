@@ -1,0 +1,11 @@
+{
+  "id": "kuiba:mai_edge",
+  "category": "attack",
+  "unlock_gate": 3,
+  "cost": 16,
+  "cooldown_ticks": 100,
+  "cast": "self_buff",
+  "power": 1,
+  "icon": "kuiba:textures/skill/mai_edge.png",
+  "duration_ticks": 80
+}

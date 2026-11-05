@@ -1,0 +1,407 @@
+{
+  "tiers": [
+    {
+      "gate": 0,
+      "name_key": "mai.kuiba.gate.0",
+      "max_points": 100,
+      "slots": 1,
+      "modifiers": []
+    },
+    {
+      "gate": 1,
+      "name_key": "mai.kuiba.gate.1",
+      "meridian": "lun_quan",
+      "max_points": 130,
+      "slots": 1,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 0.5,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.004,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 80,
+        "ingredients": [
+          {
+            "count": 6,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 4,
+            "tag": "minecraft:logs"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 2,
+      "name_key": "mai.kuiba.gate.2",
+      "meridian": "xuan_gu",
+      "max_points": 170,
+      "slots": 2,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 1.0,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.008,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 120,
+        "ingredients": [
+          {
+            "count": 10,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 16,
+            "item": "minecraft:cobblestone"
+          },
+          {
+            "count": 4,
+            "item": "minecraft:string"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 3,
+      "name_key": "mai.kuiba.gate.3",
+      "meridian": "chao_ying_feng",
+      "max_points": 220,
+      "slots": 2,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 1.5,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.012,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 160,
+        "ingredients": [
+          {
+            "count": 8,
+            "item": "minecraft:leather"
+          },
+          {
+            "count": 8,
+            "item": "kuiba:mai_crystal"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 4,
+      "name_key": "mai.kuiba.gate.4",
+      "meridian": "kun_hai",
+      "max_points": 280,
+      "slots": 3,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 2.0,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.016,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 200,
+        "ingredients": [
+          {
+            "count": 12,
+            "item": "minecraft:leather"
+          },
+          {
+            "count": 10,
+            "item": "kuiba:mai_crystal"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 5,
+      "name_key": "mai.kuiba.gate.5",
+      "meridian": "huan_xue",
+      "max_points": 350,
+      "slots": 3,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 2.6,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.02,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 240,
+        "ingredients": [
+          {
+            "count": 4,
+            "item": "kuiba:mai_shard"
+          },
+          {
+            "count": 12,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 8,
+            "item": "minecraft:string"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 6,
+      "name_key": "mai.kuiba.gate.6",
+      "meridian": "mu_huan_song",
+      "max_points": 430,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 3.2,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.024,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 300,
+        "ingredients": [
+          {
+            "count": 1,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 4,
+            "item": "kuiba:mai_shard"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 7,
+      "name_key": "mai.kuiba.gate.7",
+      "meridian": "lin_que",
+      "max_points": 520,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 3.8,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.028,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 360,
+        "ingredients": [
+          {
+            "count": 2,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 8,
+            "item": "kuiba:mai_shard"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 8,
+      "name_key": "mai.kuiba.gate.8",
+      "meridian": "cheng_an",
+      "max_points": 620,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 4.4,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.032,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 420,
+        "ingredients": [
+          {
+            "count": 3,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 12,
+            "item": "kuiba:mai_shard"
+          },
+          {
+            "count": 16,
+            "item": "kuiba:mai_crystal"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 9,
+      "name_key": "mai.kuiba.gate.9",
+      "meridian": "shen_po_xu",
+      "max_points": 740,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 5.0,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.036,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 480,
+        "ingredients": [
+          {
+            "count": 4,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 16,
+            "item": "kuiba:mai_shard"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 10,
+      "name_key": "mai.kuiba.gate.10",
+      "meridian": "bi_yuan",
+      "max_points": 880,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 5.6,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.04,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 560,
+        "ingredients": [
+          {
+            "count": 6,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 20,
+            "item": "kuiba:mai_shard"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 11,
+      "name_key": "mai.kuiba.gate.11",
+      "meridian": "qi_ming",
+      "max_points": 1040,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 6.2,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.044,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 640,
+        "ingredients": [
+          {
+            "count": 8,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 24,
+            "item": "kuiba:mai_shard"
+          }
+        ]
+      }
+    },
+    {
+      "gate": 12,
+      "name_key": "mai.kuiba.gate.12",
+      "meridian": "xin_duan_kong",
+      "max_points": 1220,
+      "slots": 4,
+      "modifiers": [
+        {
+          "attribute": "minecraft:generic.attack_damage",
+          "amount": 7.0,
+          "operation": "add_value"
+        },
+        {
+          "attribute": "minecraft:generic.movement_speed",
+          "amount": 0.048,
+          "operation": "add_value"
+        }
+      ],
+      "ritual": {
+        "duration_ticks": 720,
+        "ingredients": [
+          {
+            "count": 12,
+            "item": "kuiba:mai_core"
+          },
+          {
+            "count": 32,
+            "item": "kuiba:mai_shard"
+          }
+        ]
+      }
+    }
+  ]
+}

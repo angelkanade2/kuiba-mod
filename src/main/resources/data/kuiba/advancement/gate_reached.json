@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:story/root",
+  "display": {
+    "icon": {
+      "id": "kuiba:mai_crystal"
+    },
+    "title": {
+      "translate": "advancement.kuiba.gate_reached"
+    },
+    "description": {
+      "translate": "advancement.kuiba.gate_reached.desc"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "gate": {
+      "trigger": "kuiba:gate_reached",
+      "conditions": {
+        "gate": {
+          "min": 1
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "gate"
+    ]
+  ]
+}
