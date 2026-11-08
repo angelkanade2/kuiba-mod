@@ -1,41 +1,31 @@
 package com.kuiba.mai.payload;
 
-import com.kuiba.Kuiba;
+import java.util.function.Supplier;
+
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.kuiba.mai.client.MaiClientState;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-
-/**
- * S→C combo cursor for the HUD. {@code done} counts steps already cast; {@code state} is one of
- * {@code STATE_*}.
- */
-public record ComboStatePayload(int slot, int done, int total, int state) implements CustomPacketPayload {
+/** S→C combo cursor for the HUD. */
+public record ComboStatePayload(int slot, int done, int total, int state) {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_DONE = 1;
     public static final int STATE_FAILED = 2;
 
-    public static final Type<ComboStatePayload> TYPE = new Type<>(Kuiba.id("combo_state"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, ComboStatePayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT,
-            ComboStatePayload::slot,
-            ByteBufCodecs.VAR_INT,
-            ComboStatePayload::done,
-            ByteBufCodecs.VAR_INT,
-            ComboStatePayload::total,
-            ByteBufCodecs.VAR_INT,
-            ComboStatePayload::state,
-            ComboStatePayload::new);
-
-    public static void handle(ComboStatePayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> MaiClientState.onCombo(payload.slot(), payload.done(), payload.total(), payload.state()));
+    public static void encode(ComboStatePayload msg, FriendlyByteBuf buf) {
+        buf.writeVarInt(msg.slot());
+        buf.writeVarInt(msg.done());
+        buf.writeVarInt(msg.total());
+        buf.writeVarInt(msg.state());
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static ComboStatePayload decode(FriendlyByteBuf buf) {
+        return new ComboStatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+    }
+
+    public static void handle(ComboStatePayload msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> MaiClientState.onCombo(msg.slot(), msg.done(), msg.total(), msg.state()));
+        ctx.get().setPacketHandled(true);
     }
 }

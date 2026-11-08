@@ -1,6 +1,7 @@
 package com.kuiba.mai.client;
 
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import com.kuiba.KuibaSounds;
 import com.kuiba.mai.MaiApi;
@@ -55,7 +56,7 @@ public final class MaiFx {
         if (self) {
             MaiData mai = MaiApi.data(player);
             gate = mai.gate();
-            intensity = Math.clamp(mai.current() / Math.max(1.0F, mai.shownMax()), 0.0F, 1.0F);
+            intensity = Mth.clamp(mai.current() / Math.max(1.0F, mai.shownMax()), 0.0F, 1.0F);
         } else {
             MaiClientState.Aura aura = MaiClientState.aura(player.getId());
             if (aura == null) {
@@ -188,19 +189,94 @@ public final class MaiFx {
         };
     }
 
+    /**
+     * Cinematic intensity for the local player's own 开脉 / 冲脉, 0..1 with a fast attack and a
+     * long ease-out tail. Drives the FOV kick, camera shake and dark edges in {@link MaiCinematic}.
+     */
+    public static float cinematic(@Nullable MaiClientState.Fx fx, float time) {
+        if (fx == null) {
+            return 0.0F;
+        }
+        float t = time - fx.startTick;
+        return switch (fx.kind) {
+            case MaiFxPayload.KIND_OPEN -> {
+                float length = Math.max(1, fx.gate) * OPEN_STEP_TICKS + OPEN_FLASH_TICKS;
+                if (t < 0.0F || t >= length + 8.0F) {
+                    yield 0.0F;
+                }
+                float attack = Math.min(1.0F, t / 2.0F);
+                float decay = 1.0F - easeOut(Math.max(0.0F, t - 2.0F) / (length + 6.0F));
+                // 12 gates hits noticeably harder than 1.
+                float scale = 0.55F + 0.45F * Math.min(1.0F, fx.gate / 12.0F);
+                yield scale * attack * decay;
+            }
+            case MaiFxPayload.KIND_UNLOCK -> {
+                if (t < 0.0F || t >= UNLOCK_TICKS) {
+                    yield 0.0F;
+                }
+                float attack = Math.min(1.0F, t / 1.5F);
+                yield 0.9F * attack * (1.0F - easeOut(t / UNLOCK_TICKS));
+            }
+            default -> 0.0F;
+        };
+    }
+
+    /** Client-side particle burst when someone nearby opens their gates: ring kick + rising sparks. */
+    public static void openBurst(int entityId, int gate) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+        Entity entity = minecraft.level.getEntity(entityId);
+        if (entity == null) {
+            return;
+        }
+        net.minecraft.util.RandomSource random = minecraft.level.random;
+        Vector3f tone = new Vector3f(0.45F, 0.92F, 1.0F);
+        net.minecraft.world.phys.Vec3 center = entity.position().add(0.0D, entity.getBbHeight() * 0.55D, 0.0D);
+        // Radial ring kicked outward at chest height, faster with more gates.
+        int ringCount = 26 + gate * 5;
+        float speed = 0.22F + 0.02F * gate;
+        for (int i = 0; i < ringCount; i++) {
+            double a = Math.PI * 2.0D * (i + random.nextDouble() * 0.5D) / ringCount;
+            minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(tone, 1.1F),
+                    center.x, center.y, center.z,
+                    Math.cos(a) * speed, 0.015D + random.nextDouble() * 0.05D, Math.sin(a) * speed);
+        }
+        // Bright sparks rising off the body.
+        int sparks = 8 + gate * 2;
+        for (int i = 0; i < sparks; i++) {
+            minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                    center.x + (random.nextDouble() - 0.5D) * 0.6D,
+                    center.y - 0.4D + random.nextDouble() * 1.2D,
+                    center.z + (random.nextDouble() - 0.5D) * 0.6D,
+                    0.0D, 0.10D + random.nextDouble() * 0.12D, 0.0D);
+        }
+        // High gate counts get a single flash pop at the core.
+        if (gate >= 6) {
+            minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.FLASH,
+                    center.x, center.y + 0.6D, center.z, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
     /** Play the composite 开脉 clip for {@code gateCount} meridians (1..12). */
+    /**
+     * Plays the 开脉 clip **on the entity itself**: {@link net.minecraft.client.resources.sounds.EntityBoundSoundInstance}
+     * keeps the sound's position synced to the entity every tick, so it follows a moving player or mob while
+     * still being a normal positional sound that other listeners can locate by ear.
+     */
     public static void playOpenSound(int entityId, int gateCount) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             return;
         }
-        int total = Math.clamp(gateCount, 1, MAX_GATE);
+        int total = Mth.clamp(gateCount, 1, MAX_GATE);
         Entity entity = minecraft.level.getEntity(entityId);
         if (entity == null) {
             return;
         }
-        minecraft.level.playLocalSound(entity.getX(), entity.getY() + 1.0D, entity.getZ(),
-                KuibaSounds.openMaiGate(total), SoundSource.PLAYERS, 1.0F, 1.0F, false);
+        minecraft.getSoundManager().play(new net.minecraft.client.resources.sounds.EntityBoundSoundInstance(
+                KuibaSounds.openMaiGate(total), SoundSource.HOSTILE, 1.6F, 1.0F, entity, minecraft.level.random.nextLong()));
     }
 
     public static void tick() {
@@ -218,11 +294,11 @@ public final class MaiFx {
             return 0.0F;
         }
         float fadeStart = OPEN_VISUAL_TICKS - OPEN_VISUAL_FADE_TICKS;
-        return age <= fadeStart ? 1.0F : Math.clamp((OPEN_VISUAL_TICKS - age) / OPEN_VISUAL_FADE_TICKS, 0.0F, 1.0F);
+        return age <= fadeStart ? 1.0F : Mth.clamp((OPEN_VISUAL_TICKS - age) / OPEN_VISUAL_FADE_TICKS, 0.0F, 1.0F);
     }
 
     private static float easeOut(float f) {
-        f = Math.clamp(f, 0.0F, 1.0F);
+        f = Mth.clamp(f, 0.0F, 1.0F);
         return 1.0F - (1.0F - f) * (1.0F - f) * (1.0F - f);
     }
 }

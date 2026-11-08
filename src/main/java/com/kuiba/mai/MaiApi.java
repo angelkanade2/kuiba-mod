@@ -18,14 +18,13 @@ import com.kuiba.mai.payload.SyncMaiPayload;
 import com.kuiba.wenyao.WenyaoApi;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.common.MinecraftForge;
+import com.kuiba.core.KuibaNetwork;
 
 public final class MaiApi {
     public static final float EMPTY_EPSILON = 1.0E-3F;
@@ -38,7 +37,7 @@ public final class MaiApi {
     private MaiApi() {}
 
     public static MaiData data(Player player) {
-        return player.getData(MaiAttachments.MAI.get());
+        return MaiAttachments.data(player);
     }
 
     public static int getGate(Player player) {
@@ -166,7 +165,7 @@ public final class MaiApi {
 
     /** One-shot ring effect, shown to the player and everyone who can see them. */
     public static void sendFx(ServerPlayer player, int kind, int gate) {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new MaiFxPayload(player.getId(), kind, gate));
+        KuibaNetwork.sendToTrackingAndSelf(player, new MaiFxPayload(player.getId(), kind, gate));
     }
 
     /** Aura packet for one viewer. Used when a player starts tracking another. */
@@ -174,13 +173,13 @@ public final class MaiApi {
         MaiData mai = data(subject);
         float max = Math.max(1.0F, getMax(subject));
         int level = MaiRegen.isOpenVisualActive(subject) ? MaiAuraPayload.quantize(mai.current() / max) : 0;
-        PacketDistributor.sendToPlayer(viewer, new MaiAuraPayload(subject.getId(), mai.gate(), level));
+        KuibaNetwork.sendToPlayer(viewer, new MaiAuraPayload(subject.getId(), mai.gate(), level));
     }
 
     private static void broadcastAura(ServerPlayer player, MaiData mai, float max) {
         int level = MaiRegen.isOpenVisualActive(player) ? MaiAuraPayload.quantize(mai.current() / Math.max(1.0F, max)) : 0;
         if (mai.updateAura(mai.gate(), level)) {
-            PacketDistributor.sendToPlayersTrackingEntity(player, new MaiAuraPayload(player.getId(), mai.gate(), level));
+            KuibaNetwork.sendToTracking(player, new MaiAuraPayload(player.getId(), mai.gate(), level));
         }
     }
 
@@ -188,7 +187,7 @@ public final class MaiApi {
     public static void syncOpenVisualClosed(ServerPlayer player) {
         MaiData mai = data(player);
         if (mai.updateAura(mai.gate(), 0)) {
-            PacketDistributor.sendToPlayersTrackingEntity(player, new MaiAuraPayload(player.getId(), mai.gate(), 0));
+            KuibaNetwork.sendToTracking(player, new MaiAuraPayload(player.getId(), mai.gate(), 0));
         }
     }
 
@@ -210,7 +209,7 @@ public final class MaiApi {
     }
 
     /**
-     * 开局礼包: enough 脉晶 to run the gate 1 ritual. Granted once, tracked by the persisted
+     * 开局礼包: starting 脉晶, handed out silently. Granted once, tracked by the persisted
      * {@code initialized} flag, so dying or relogging never re-grants it.
      */
     private static void grantStartingCrystals(ServerPlayer player) {
@@ -222,7 +221,6 @@ public final class MaiApi {
         if (!player.getInventory().add(stack)) {
             player.drop(stack, false);
         }
-        player.displayClientMessage(Component.translatable("message.kuiba.start.crystals", count), true);
     }
 
     public static void changeGate(ServerPlayer player, int newGate) {
@@ -234,9 +232,9 @@ public final class MaiApi {
         float max = getMax(player);
         mai.setCurrent(Math.min(mai.current(), max), max);
         applyModifiers(player);
-        NeoForge.EVENT_BUS.post(new MaiGateChangedEvent(player, from, mai.gate()));
+        MinecraftForge.EVENT_BUS.post(new MaiGateChangedEvent(player, from, mai.gate()));
         if (mai.gate() > from) {
-            GateReachedTrigger.GATE_REACHED.get().trigger(player, mai.gate());
+            GateReachedTrigger.GATE_REACHED.trigger(player, mai.gate());
         }
         sync(player);
         if (mai.gate() > from) {
@@ -262,6 +260,7 @@ public final class MaiApi {
                 }
                 instance.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                         modifier.modifierId(),
+                        modifier.modifierId().toString(),
                         modifier.amount(),
                         modifier.operation()));
             }
@@ -348,13 +347,14 @@ public final class MaiApi {
                 cooldowns,
                 Set.copyOf(mai.unlocked()),
                 combos,
-                mai.selectedCombo());
-        player.connection.send(new ClientboundCustomPayloadPacket(payload));
+                mai.selectedCombo(),
+                mai.fixedCombo());
+        KuibaNetwork.sendToPlayer(player, payload);
         broadcastAura(player, mai, max);
     }
 
     public static void onResourcesReloaded() {
-        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
             return;
         }

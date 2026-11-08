@@ -1,29 +1,25 @@
 package com.kuiba.mai.payload;
 
-import com.kuiba.Kuiba;
+import java.util.function.Supplier;
+
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.kuiba.mai.client.MaiClientState;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-
-public record RitualProgressPayload(float progress, boolean cancelled) implements CustomPacketPayload {
-    public static final Type<RitualProgressPayload> TYPE = new Type<>(Kuiba.id("ritual_progress"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, RitualProgressPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.FLOAT,
-            RitualProgressPayload::progress,
-            ByteBufCodecs.BOOL,
-            RitualProgressPayload::cancelled,
-            RitualProgressPayload::new);
-
-    public static void handle(RitualProgressPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> MaiClientState.onProgress(payload.progress(), payload.cancelled()));
+/** S→C ritual bar. */
+public record RitualProgressPayload(float progress, boolean cancelled) {
+    public static void encode(RitualProgressPayload msg, FriendlyByteBuf buf) {
+        buf.writeFloat(msg.progress());
+        buf.writeBoolean(msg.cancelled());
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static RitualProgressPayload decode(FriendlyByteBuf buf) {
+        return new RitualProgressPayload(buf.readFloat(), buf.readBoolean());
+    }
+
+    public static void handle(RitualProgressPayload msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> MaiClientState.onProgress(msg.progress(), msg.cancelled()));
+        ctx.get().setPacketHandled(true);
     }
 }

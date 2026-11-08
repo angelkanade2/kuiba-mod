@@ -2,7 +2,7 @@
   "parent": "minecraft:story/root",
   "display": {
     "icon": {
-      "id": "kuiba:mai_crystal"
+      "item": "kuiba:mai_crystal"
     },
     "title": {
       "translate": "advancement.kuiba.gate_reached"

@@ -20,7 +20,6 @@ import net.minecraft.util.profiling.ProfilerFiller;
 public final class MaiSkills extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new Gson();
     public static final MaiSkills SERVER = new MaiSkills();
-    public static final MaiSkills CLIENT = new MaiSkills();
 
     private static volatile Map<ResourceLocation, MaiSkill> byId = Map.of();
     private static volatile List<MaiSkill> ordered = List.of();
@@ -79,7 +78,7 @@ public final class MaiSkills extends SimpleJsonResourceReloadListener {
     }
 
     private static @Nullable MaiSkill parse(ResourceLocation file, JsonObject json) {
-        ResourceLocation id = json.has("id") ? ResourceLocation.tryParse(json.get("id").getAsString()) : file;
+        ResourceLocation id = json.has("id") ? com.kuiba.Kuiba.parse(json.get("id").getAsString()) : file;
         if (id == null) {
             Kuiba.LOGGER.warn("Mai skill {} has an invalid id", file);
             return null;
@@ -102,7 +101,7 @@ public final class MaiSkills extends SimpleJsonResourceReloadListener {
         int duration = json.has("duration_ticks") ? json.get("duration_ticks").getAsInt() : 0;
         ResourceLocation icon = Kuiba.id("textures/skill/" + id.getPath() + ".png");
         if (json.has("icon")) {
-            ResourceLocation parsedIcon = ResourceLocation.tryParse(json.get("icon").getAsString());
+            ResourceLocation parsedIcon = com.kuiba.Kuiba.parse(json.get("icon").getAsString());
             if (parsedIcon != null) {
                 icon = parsedIcon;
             }

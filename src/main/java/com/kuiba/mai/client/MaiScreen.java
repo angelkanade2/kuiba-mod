@@ -1,5 +1,6 @@
 package com.kuiba.mai.client;
 
+import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.kuiba.core.KuibaNetwork;
 
 /**
  * Mai gate screen. Click or drag an unlocked skill onto an open slot.
@@ -67,19 +68,14 @@ public class MaiScreen extends Screen {
      * texture, and {@code Screen.render} blurs again after custom draws, which smears the panel.
      */
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (this.minecraft == null) {
-            return;
-        }
-        if (this.minecraft.level == null) {
-            this.renderPanorama(graphics, partialTick);
-        }
-        this.renderBlurredBackground(partialTick);
+    public void renderBackground(GuiGraphics graphics) {
+        // 1.20.1 has no in-game menu blur. A dim scrim keeps the panel readable over the world.
+        graphics.fill(0, 0, this.width, this.height, 0x88080C12);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        this.renderBackground(graphics);
         int left = left();
         int top = top();
         graphics.fill(left, top, left + PANEL_W, top + PANEL_H, 0xFF10141C);
@@ -167,7 +163,7 @@ public class MaiScreen extends Screen {
 
         List<MaiSkill> unlocked = unlocked(mai);
         int maxScroll = Math.max(0, unlocked.size() - VISIBLE_ROWS);
-        scroll = Math.clamp(scroll, 0, maxScroll);
+        scroll = Mth.clamp(scroll, 0, maxScroll);
         for (int row = 0; row < VISIBLE_ROWS; row++) {
             int index = scroll + row;
             if (index >= unlocked.size()) {
@@ -252,11 +248,11 @@ public class MaiScreen extends Screen {
         int top = top();
         int buttonY = top + PANEL_H - 26;
         if (inside(mouseX, mouseY, left + 12, buttonY, 64, 18)) {
-            PacketDistributor.sendToServer(new OpenMaiPayload());
+            KuibaNetwork.sendToServer(new OpenMaiPayload());
             return true;
         }
         if (inside(mouseX, mouseY, left + 84, buttonY, 100, 18)) {
-            PacketDistributor.sendToServer(new StartRitualPayload(!MaiClientState.ritualActive(), Optional.empty()));
+            KuibaNetwork.sendToServer(new StartRitualPayload(!MaiClientState.ritualActive(), Optional.empty()));
             return true;
         }
         if (inside(mouseX, mouseY, left + 192, buttonY, 64, 18)) {
@@ -273,12 +269,12 @@ public class MaiScreen extends Screen {
         int slot = slotAt(mouseX, mouseY);
         if (slot >= 0) {
             if (button == 1) {
-                PacketDistributor.sendToServer(new EquipSkillPayload(slot, Optional.empty()));
+                KuibaNetwork.sendToServer(new EquipSkillPayload(slot, Optional.empty()));
                 selected = null;
                 return true;
             }
             if (selected != null && slot < openSlots) {
-                PacketDistributor.sendToServer(new EquipSkillPayload(slot, Optional.of(selected)));
+                KuibaNetwork.sendToServer(new EquipSkillPayload(slot, Optional.of(selected)));
                 return true;
             }
             ResourceLocation equipped = mai.equipped(slot);
@@ -325,7 +321,7 @@ public class MaiScreen extends Screen {
                 int openSlots = MaiTiers.slots(MaiApi.data(this.minecraft.player).gate());
                 int slot = slotAt(mouseX, mouseY);
                 if (slot >= 0 && slot < openSlots) {
-                    PacketDistributor.sendToServer(new EquipSkillPayload(slot, Optional.of(skill)));
+                    KuibaNetwork.sendToServer(new EquipSkillPayload(slot, Optional.of(skill)));
                     selected = skill;
                 }
             }
@@ -335,13 +331,13 @@ public class MaiScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (this.minecraft != null && this.minecraft.player != null && inside(mouseX, mouseY, poolX(), poolY(0), 180, VISIBLE_ROWS * ROW_H)) {
             int maxScroll = Math.max(0, unlocked(MaiApi.data(this.minecraft.player)).size() - VISIBLE_ROWS);
-            scroll = Math.clamp(scroll - (int) Math.signum(scrollY), 0, maxScroll);
+            scroll = Mth.clamp(scroll - (int) Math.signum(delta), 0, maxScroll);
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     private List<MaiSkill> unlocked(MaiData mai) {

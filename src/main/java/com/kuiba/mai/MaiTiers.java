@@ -1,5 +1,6 @@
 package com.kuiba.mai;
 
+import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +17,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.kuiba.Kuiba;
 
-import net.minecraft.core.Holder;
+import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -30,7 +31,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 public final class MaiTiers extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new Gson();
     public static final MaiTiers SERVER = new MaiTiers();
-    public static final MaiTiers CLIENT = new MaiTiers();
 
     private static volatile Map<Integer, Tier> byGate = Map.of();
     private static volatile List<Tier> ordered = List.of();
@@ -71,8 +71,8 @@ public final class MaiTiers extends SimpleJsonResourceReloadListener {
         return Meridian.defaultFor(gate);
     }
 
-    public static Set<ResourceLocation> modifierIds() {
-        Set<ResourceLocation> ids = new HashSet<>();
+    public static Set<UUID> modifierIds() {
+        Set<UUID> ids = new HashSet<>();
         for (Tier tier : ordered) {
             for (ModifierSpec modifier : tier.modifiers()) {
                 ids.add(modifier.modifierId());
@@ -132,7 +132,7 @@ public final class MaiTiers extends SimpleJsonResourceReloadListener {
         String nameKey = json.has("name_key") ? json.get("name_key").getAsString() : "mai.kuiba.gate." + gate;
         float maxPoints = json.has("max_points") ? json.get("max_points").getAsFloat() : 100.0F;
         int slots = json.has("slots") ? json.get("slots").getAsInt() : 1;
-        slots = Math.clamp(slots, 1, MaiData.EQUIPPED_SLOTS);
+        slots = Mth.clamp(slots, 1, MaiData.EQUIPPED_SLOTS);
         List<ModifierSpec> modifiers = new ArrayList<>();
         if (json.has("modifiers") && json.get("modifiers").isJsonArray()) {
             int index = 0;
@@ -166,28 +166,28 @@ public final class MaiTiers extends SimpleJsonResourceReloadListener {
         if (!json.has("attribute")) {
             return null;
         }
-        ResourceLocation attributeId = ResourceLocation.tryParse(json.get("attribute").getAsString());
+        ResourceLocation attributeId = com.kuiba.Kuiba.parse(json.get("attribute").getAsString());
         if (attributeId == null) {
             Kuiba.LOGGER.warn("Bad attribute id on gate {} in {}", gate, file);
             return null;
         }
-        ResourceKey<Attribute> key = ResourceKey.create(Registries.ATTRIBUTE, attributeId);
-        Optional<Holder.Reference<Attribute>> holder = BuiltInRegistries.ATTRIBUTE.getHolder(key);
-        if (holder.isEmpty()) {
+        Attribute attribute = BuiltInRegistries.ATTRIBUTE.get(attributeId);
+        if (attribute == null) {
             Kuiba.LOGGER.warn("Unknown attribute {} on gate {} in {}", attributeId, gate, file);
             return null;
         }
         double amount = json.has("amount") ? json.get("amount").getAsDouble() : 0.0D;
         AttributeModifier.Operation operation = parseOperation(json.has("operation") ? json.get("operation").getAsString() : "add_value");
-        ResourceLocation modifierId = Kuiba.id("gate/" + gate + "/" + index + "/" + attributeId.getPath().replace('.', '_').replace('/', '_'));
-        return new ModifierSpec(attributeId, holder.get(), amount, operation, modifierId);
+        String modifierName = "kuiba:gate/" + gate + "/" + index + "/" + attributeId.getPath().replace('.', '_').replace('/', '_');
+        UUID modifierId = com.kuiba.core.KuibaIds.uuid(modifierName);
+        return new ModifierSpec(attributeId, attribute, amount, operation, modifierId);
     }
 
     private static AttributeModifier.Operation parseOperation(String raw) {
         return switch (raw) {
-            case "add_multiplied_base" -> AttributeModifier.Operation.ADD_MULTIPLIED_BASE;
-            case "add_multiplied_total" -> AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
-            default -> AttributeModifier.Operation.ADD_VALUE;
+            case "add_multiplied_base" -> AttributeModifier.Operation.MULTIPLY_BASE;
+            case "add_multiplied_total" -> AttributeModifier.Operation.MULTIPLY_TOTAL;
+            default -> AttributeModifier.Operation.ADDITION;
         };
     }
 
@@ -210,10 +210,10 @@ public final class MaiTiers extends SimpleJsonResourceReloadListener {
                 ResourceLocation item = null;
                 ResourceLocation tag = null;
                 if (ingredient.has("item")) {
-                    item = ResourceLocation.tryParse(ingredient.get("item").getAsString());
+                    item = com.kuiba.Kuiba.parse(ingredient.get("item").getAsString());
                 }
                 if (ingredient.has("tag")) {
-                    tag = ResourceLocation.tryParse(ingredient.get("tag").getAsString());
+                    tag = com.kuiba.Kuiba.parse(ingredient.get("tag").getAsString());
                 }
                 if (item == null && tag == null) {
                     Kuiba.LOGGER.warn("Ritual ingredient on gate {} in {} has neither item nor tag", gate, file);
@@ -236,10 +236,10 @@ public final class MaiTiers extends SimpleJsonResourceReloadListener {
 
     public record ModifierSpec(
             ResourceLocation attributeId,
-            Holder<Attribute> attribute,
+            Attribute attribute,
             double amount,
             AttributeModifier.Operation operation,
-            ResourceLocation modifierId) {}
+            UUID modifierId) {}
 
     public record RitualDef(int durationTicks, List<IngredientSpec> ingredients) {}
 

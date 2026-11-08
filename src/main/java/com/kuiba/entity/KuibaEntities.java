@@ -4,14 +4,14 @@ import java.util.function.Supplier;
 
 import com.kuiba.Kuiba;
 
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 
 public final class KuibaEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
-            DeferredRegister.create(Registries.ENTITY_TYPE, Kuiba.MOD_ID);
+            DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Kuiba.MOD_ID);
 
     public static final Supplier<EntityType<MaiBolt>> MAI_BOLT = ENTITY_TYPES.register("mai_bolt",
             () -> EntityType.Builder.<MaiBolt>of(MaiBolt::new, MobCategory.MISC)

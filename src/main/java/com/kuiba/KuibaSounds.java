@@ -1,19 +1,26 @@
 package com.kuiba;
 
-import net.minecraft.core.registries.Registries;
+import java.util.function.Supplier;
+
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
-import net.neoforged.neoforge.registries.DeferredRegister;
-
-import java.util.function.Supplier;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 
 public final class KuibaSounds {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS =
-            DeferredRegister.create(Registries.SOUND_EVENT, Kuiba.MOD_ID);
+            DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, Kuiba.MOD_ID);
 
     /** 开脉 composite sfx: one clip per opened gate count (1..12). */
     @SuppressWarnings("unchecked")
     private static final Supplier<SoundEvent>[] OPEN_MAI_GATES = new Supplier[13];
+
+    /**
+     * Audible radius of a 开脉 clip, in blocks. A variable-range event only reaches the default 16 blocks,
+     * which made 特殊怪 pulses useless for 听声辩位; a fixed range lets the sound attenuate over a wider
+     * area while staying fully positional.
+     */
+    public static final float OPEN_MAI_RANGE = 48.0F;
 
     static {
         for (int i = 1; i <= 12; i++) {
@@ -30,6 +37,6 @@ public final class KuibaSounds {
     }
 
     private static Supplier<SoundEvent> register(String name) {
-        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(Kuiba.id(name)));
+        return SOUND_EVENTS.register(name, () -> SoundEvent.createFixedRangeEvent(Kuiba.id(name), OPEN_MAI_RANGE));
     }
 }
