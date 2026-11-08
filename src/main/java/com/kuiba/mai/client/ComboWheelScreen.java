@@ -16,7 +16,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.kuiba.core.KuibaNetwork;
 
 /**
  * 技能圆盘. Opened by holding the wheel key; the wheel lists every combo placed on it, each with its
@@ -61,7 +61,7 @@ public class ComboWheelScreen extends Screen {
 
     /** No vanilla blur or panorama: the wheel draws its own scrim so the HUD stays readable behind it. */
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {}
+    public void renderBackground(GuiGraphics graphics) {}
 
     @Override
     public void tick() {
@@ -208,7 +208,7 @@ public class ComboWheelScreen extends Screen {
         }
         committed = true;
         if (hovered != MaiCombo.NO_COMBO) {
-            PacketDistributor.sendToServer(new SelectComboPayload(hovered));
+            KuibaNetwork.sendToServer(new SelectComboPayload(hovered));
         }
         close();
     }

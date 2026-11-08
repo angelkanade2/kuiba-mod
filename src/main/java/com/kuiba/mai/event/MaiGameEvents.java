@@ -1,6 +1,9 @@
 package com.kuiba.mai.event;
 
+import com.kuiba.core.GateHostData;
 import com.kuiba.core.KuibaServerConfig;
+import com.kuiba.core.MaiAttachments;
+import com.kuiba.core.MaiGateHosts;
 import com.kuiba.mai.MaiApi;
 import com.kuiba.mai.MaiCombo;
 import com.kuiba.mai.MaiData;
@@ -12,16 +15,17 @@ import com.kuiba.mai.MaiWaves;
 import com.kuiba.wenyao.WeaponArts;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.event.OnDatapackSyncEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public final class MaiGameEvents {
     private MaiGameEvents() {}
@@ -34,7 +38,7 @@ public final class MaiGameEvents {
     }
 
     @SubscribeEvent
-    public static void onReloadComplete(net.neoforged.neoforge.event.OnDatapackSyncEvent event) {
+    public static void onReloadComplete(OnDatapackSyncEvent event) {
         if (event.getPlayer() == null) {
             MaiApi.onResourcesReloaded();
         }
@@ -65,16 +69,20 @@ public final class MaiGameEvents {
     }
 
     /**
-     * Runs after NeoForge's own clone copy ({@code copyOnDeath}).
-     * Death keeps gate, unlocked, and equipped, then sets current to 30% of max.
+     * Forge does not copy capabilities on its own. Copy the full mai attachment first, then apply the
+     * same death trim the 1.21.1 build applied after NeoForge's copyOnDeath.
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onClone(PlayerEvent.Clone event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
+        event.getOriginal().reviveCaps();
+        MaiData previous = MaiAttachments.data(event.getOriginal());
+        MaiData mai = MaiApi.data(player);
+        mai.deserializeNBT(previous.serializeNBT());
+        event.getOriginal().invalidateCaps();
         if (event.isWasDeath()) {
-            MaiData mai = MaiApi.data(player);
             if (KuibaServerConfig.KEEP_GATE_ON_DEATH.get()) {
                 mai.retainProgressionOnly();
             } else {
@@ -93,8 +101,11 @@ public final class MaiGameEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (event.player instanceof ServerPlayer player) {
             MaiRitual.tick(player);
             MaiCombo.tick(player);
             MaiRegen.tick(player);
@@ -102,22 +113,38 @@ public final class MaiGameEvents {
     }
 
     @SubscribeEvent
-    public static void onLevelTick(LevelTickEvent.Post event) {
-        if (event.getLevel() instanceof ServerLevel level) {
+    public static void onLevelTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (event.level instanceof ServerLevel level) {
             MaiWaves.tick(level);
+            com.kuiba.mai.MaiFxSequencer.tick(level);
         }
     }
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         MaiWaves.clear();
+        com.kuiba.mai.MaiFxSequencer.clear();
     }
 
     /** A player came into view: give the viewer the subject's 脉门 aura so the rings show right away. */
     @SubscribeEvent
     public static void onStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getEntity() instanceof ServerPlayer viewer && event.getTarget() instanceof ServerPlayer subject) {
+        if (!(event.getEntity() instanceof ServerPlayer viewer)) {
+            return;
+        }
+        if (event.getTarget() instanceof ServerPlayer subject) {
             MaiApi.sendAuraTo(viewer, subject);
+            return;
+        }
+        // 特殊怪: replay its 开脉 pulse so a player walking in sees the same rings and sound.
+        if (event.getTarget() instanceof Mob mob && MaiAttachments.isHost(mob)) {
+            GateHostData data = MaiAttachments.host(mob);
+            if (data.isHost()) {
+                MaiGateHosts.pulseToOne(viewer, mob, data.gates());
+            }
         }
     }
 
@@ -130,8 +157,8 @@ public final class MaiGameEvents {
     }
 
     @SubscribeEvent
-    public static void onDamaged(LivingDamageEvent.Post event) {
-        if (event.getNewDamage() <= 0.0F) {
+    public static void onDamaged(LivingDamageEvent event) {
+        if (event.getAmount() <= 0.0F) {
             return;
         }
         if (event.getEntity() instanceof ServerPlayer player) {

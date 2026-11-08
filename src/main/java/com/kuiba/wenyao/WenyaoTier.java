@@ -1,9 +1,5 @@
 package com.kuiba.wenyao;
 
-import io.netty.buffer.ByteBuf;
-
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
 
 /** Pendant rank stored in {@code kuiba:wenyao_tier}. Common has no melee bonus. */
@@ -12,10 +8,6 @@ public enum WenyaoTier implements StringRepresentable {
     XIA("xia", 4, 10.0F, 0.95F, 0.03F),
     JIANG("jiang", 7, 18.0F, 0.92F, 0.06F),
     WANG("wang", 10, 28.0F, 0.90F, 0.08F);
-
-    public static final StreamCodec<ByteBuf, WenyaoTier> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(
-            WenyaoTier::byName,
-            WenyaoTier::getSerializedName);
 
     private final String name;
     private final int minGate;

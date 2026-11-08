@@ -1,7 +1,7 @@
 package com.kuiba.mai.event;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.bus.api.Event;
+import net.minecraftforge.eventbus.api.Event;
 
 public class MaiGateChangedEvent extends Event {
     private final ServerPlayer player;

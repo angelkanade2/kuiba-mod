@@ -22,11 +22,11 @@ final class MaiSkillTip {
 
     static List<Component> lines(Font font, MaiSkill skill) {
         List<Component> tip = new ArrayList<>();
-        tip.add(Component.translatable(skill.nameKey()).withColor(NAME));
-        tip.add(Component.translatable("screen.kuiba.combo.skill_tip", Math.round(skill.cost())).withColor(STATS));
+        tip.add(Component.translatable(skill.nameKey()).withStyle(style -> style.withColor(NAME)));
+        tip.add(Component.translatable("screen.kuiba.combo.skill_tip", Math.round(skill.cost())).withStyle(style -> style.withColor(STATS)));
         if (I18n.exists(skill.descKey())) {
             for (FormattedText line : font.getSplitter().splitLines(Component.translatable(skill.descKey()), WIDTH, Style.EMPTY)) {
-                tip.add(Component.literal(line.getString()).withColor(DESC));
+                tip.add(Component.literal(line.getString()).withStyle(style -> style.withColor(DESC)));
             }
         }
         return tip;

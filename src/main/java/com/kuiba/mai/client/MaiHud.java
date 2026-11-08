@@ -1,5 +1,6 @@
 package com.kuiba.mai.client;
 
+import net.minecraft.util.Mth;
 import com.kuiba.Kuiba;
 import com.kuiba.mai.MaiApi;
 import com.kuiba.mai.MaiData;
@@ -7,13 +8,12 @@ import com.kuiba.mai.MaiTiers;
 import com.kuiba.mai.Meridian;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 
 /**
  * Mai HUD above the hunger row, bottom to top: the pool bar, a row of twelve 脉门 marks that light with
@@ -41,10 +41,10 @@ public final class MaiHud {
 
     /**
      * Sits above air and vehicle health so it can stack on {@code Gui.rightHeight}, then reserves its own
-     * height there. NeoForge lifts the held-item name and the action bar above that height.
+     * height there. Forge lifts the held-item name above that height.
      */
-    public static void register(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.AIR_LEVEL, Kuiba.id("mai_hud"), MaiHud::render);
+    public static void register(RegisterGuiOverlaysEvent event) {
+        event.registerAbove(VanillaGuiOverlay.AIR_LEVEL.id(), "mai_hud", MaiHud::render);
     }
 
     /**
@@ -67,13 +67,13 @@ public final class MaiHud {
         return height;
     }
 
-    private static void render(GuiGraphics graphics, DeltaTracker delta) {
+    private static void render(net.minecraftforge.client.gui.overlay.ForgeGui gui, GuiGraphics graphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.options.hideGui || minecraft.player.isSpectator()) {
             return;
         }
         MaiData mai = MaiApi.data(minecraft.player);
-        float time = MaiFx.time(delta.getGameTimeDeltaPartialTick(false));
+        float time = MaiFx.time(partialTick);
         MaiClientState.Fx fx = MaiClientState.fx(minecraft.player.getId());
         MaiFx.View view = MaiFx.view(minecraft.player);
 
@@ -84,24 +84,25 @@ public final class MaiHud {
 
         int right = width / 2 + 91;
         int barX = right - BAR_W;
-        int barY = stackBottom(height, minecraft.gui.rightHeight) - BAR_H - 1;
+        net.minecraftforge.client.gui.overlay.ForgeGui forgeGui = (net.minecraftforge.client.gui.overlay.ForgeGui) minecraft.gui;
+        int barY = stackBottom(height, forgeGui.rightHeight) - BAR_H - 1;
         int dotsY = barY - DOT - 1;
         int labelY = dotsY - 10;
         int ritualY = labelY - 10;
         int top = MaiClientState.ritualActive() ? ritualY - 11 : labelY - 1;
-        minecraft.gui.rightHeight = reserve(minecraft, height, top);
+        forgeGui.rightHeight = reserve(minecraft, height, top);
 
         float max = Math.max(1.0F, mai.shownMax());
-        float ratio = Math.clamp(mai.current() / max, 0.0F, 1.0F);
+        float ratio = Mth.clamp(mai.current() / max, 0.0F, 1.0F);
         boolean closed = ratio <= 0.001F;
         boolean low = !closed && ratio < 0.25F;
 
         renderBar(graphics, barX, barY, ratio, closed, low, time);
         renderGateDots(graphics, view, mai.gate(), barX, dotsY, time);
-        renderLabel(graphics, minecraft, mai, barX, labelY, closed, low, max);
+        renderValue(graphics, minecraft, mai, barX, labelY, closed, low, max);
 
         if (MaiClientState.ritualActive()) {
-            int fill = Math.round(BAR_W * Math.clamp(MaiClientState.progress(), 0.0F, 1.0F));
+            int fill = Math.round(BAR_W * Mth.clamp(MaiClientState.progress(), 0.0F, 1.0F));
             graphics.fill(barX - 1, ritualY - 1, barX + BAR_W + 1, ritualY + 4, PANEL);
             graphics.fill(barX, ritualY, barX + fill, ritualY + 3, GOLD);
             Meridian next = MaiTiers.meridian(mai.gate() + 1);
@@ -114,13 +115,21 @@ public final class MaiHud {
 
     private static void renderFlash(GuiGraphics graphics, MaiClientState.Fx fx, float time, int width, int height) {
         float flash = MaiFx.screenFlash(fx, time);
-        if (flash <= 0.01F) {
+        float cine = MaiFx.cinematic(fx, time);
+        if (flash <= 0.01F && cine <= 0.01F) {
             return;
         }
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        graphics.setColor(1.0F, 1.0F, 1.0F, flash);
-        graphics.blit(VIGNETTE, 0, 0, width, height, 0.0F, 0.0F, 64, 64, 64, 64);
+        // Dark edges under the flash: the world closes in, then the cyan flash blooms through.
+        if (cine > 0.01F) {
+            graphics.setColor(0.0F, 0.0F, 0.0F, 0.5F * cine);
+            graphics.blit(VIGNETTE, 0, 0, width, height, 0.0F, 0.0F, 64, 64, 64, 64);
+        }
+        if (flash > 0.01F) {
+            graphics.setColor(1.0F, 1.0F, 1.0F, flash);
+            graphics.blit(VIGNETTE, 0, 0, width, height, 0.0F, 0.0F, 64, 64, 64, 64);
+        }
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
@@ -175,21 +184,14 @@ public final class MaiHud {
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    private static void renderLabel(GuiGraphics graphics, Minecraft minecraft, MaiData mai, int x, int y, boolean closed, boolean low, float max) {
-        Component name = Component.translatable(MaiTiers.nameKey(mai.gate()));
-        Meridian meridian = MaiTiers.meridian(mai.gate());
-        Component left = meridian == null
-                ? name
-                : Component.translatable("hud.kuiba.gate_label", name, Component.translatable(meridian.nameKey()));
-        int leftColor = mai.gate() > 6 ? 0xFF9A9A9A : CYAN_TEXT;
-        graphics.drawString(minecraft.font, left, x, y, leftColor, true);
-
-        Component right = closed
+    /** 脉值 current/max，画在脉门点上方一行（门阶文字已去掉）. */
+    private static void renderValue(GuiGraphics graphics, Minecraft minecraft, MaiData mai, int x, int y, boolean closed, boolean low, float max) {
+        Component text = closed
                 ? Component.translatable("hud.kuiba.closed")
                 : Component.literal(Math.round(mai.current()) + "/" + Math.round(max));
-        int rightColor = closed ? 0xFF7C8A92 : (low ? LOW : 0xFF8CF3FF);
-        int rw = minecraft.font.width(right);
-        graphics.drawString(minecraft.font, right, x + BAR_W - rw, y, rightColor, true);
+        int color = closed ? 0xFF7C8A92 : (low ? LOW : 0xFF8CF3FF);
+        int w = minecraft.font.width(text);
+        graphics.drawString(minecraft.font, text, x + BAR_W - w, y, color, true);
     }
 
     static void frame(GuiGraphics graphics, int x, int y, int w, int h, int color) {
@@ -200,7 +202,7 @@ public final class MaiHud {
     }
 
     static int withAlpha(int rgb, float alpha) {
-        int a = Math.round(255.0F * Math.clamp(alpha, 0.0F, 1.0F));
+        int a = Math.round(255.0F * Mth.clamp(alpha, 0.0F, 1.0F));
         return (a << 24) | (rgb & 0x00FFFFFF);
     }
 }

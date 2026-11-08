@@ -1,5 +1,6 @@
 package com.kuiba.mai;
 
+import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +11,6 @@ import com.kuiba.mai.payload.ComboStatePayload;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -46,7 +46,7 @@ public final class MaiCombo {
     private MaiCombo() {}
 
     public static int clampGap(int gapTicks) {
-        return Math.clamp(gapTicks, 0, 200);
+        return Mth.clamp(gapTicks, 0, 200);
     }
 
     /** Trim, drop formatting codes, and cut to {@link #NAME_MAX} code points. Blank names are allowed. */
@@ -275,7 +275,7 @@ public final class MaiCombo {
     }
 
     private static void notify(ServerPlayer player, int slot, int done, int total, int state) {
-        player.connection.send(new ClientboundCustomPayloadPacket(new ComboStatePayload(slot, done, total, state)));
+        com.kuiba.core.KuibaNetwork.sendToPlayer(player, new ComboStatePayload(slot, done, total, state));
     }
 
     private static Preset sanitize(ServerPlayer player, @Nullable Preset preset) {

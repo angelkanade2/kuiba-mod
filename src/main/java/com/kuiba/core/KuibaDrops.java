@@ -9,8 +9,8 @@ import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
 
 /**
  * 掉落规则. A zombie killed by a player has a config-driven chance to drop one extra 脉晶.
@@ -50,7 +50,7 @@ public final class KuibaDrops {
     }
 
     /** Direct player hit, or a projectile the player shot. */
-    private static boolean killedByPlayer(DamageSource source) {
+    static boolean killedByPlayer(DamageSource source) {
         if (source.getEntity() instanceof Player) {
             return true;
         }

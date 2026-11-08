@@ -8,10 +8,13 @@ build/
 game/
 .tools/
 backup/
+emblems/
 *.rar
 *.zip
 /*.jar
 !/gradle/wrapper/gradle-wrapper.jar
+/tools/build_grid.py
+/tools/crop_emblems.py
 
 ### IntelliJ IDEA ###
 .idea/

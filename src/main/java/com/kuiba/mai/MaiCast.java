@@ -12,12 +12,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import com.google.common.collect.Multimap;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 
 /**
  * Single cast entry for hotbar slots and combo steps.
@@ -67,7 +75,7 @@ public final class MaiCast {
         }
         // Skill casting has no cooldown any more: the mai pool is the only cost. 器艺 keeps its own timer.
         MaiCastEvent event = new MaiCastEvent(player, skill, slot);
-        NeoForge.EVENT_BUS.post(event);
+        MinecraftForge.EVENT_BUS.post(event);
         if (event.isCanceled()) {
             return false;
         }
@@ -156,7 +164,7 @@ public final class MaiCast {
         }
         player.setDeltaMovement(vx, vy, vz);
         player.hurtMarked = true;
-        player.resetFallDistance();
+        player.fallDistance = 0.0F;
         mai.setNoFallUntil(player.level().getGameTime() + FALL_GRACE_TICKS);
         // The FX trail follows the actual travel vector, so a pitched dash streaks upward with you.
         MaiSkillFx.dash(player, charge, speed * 4.0D, new Vec3(vx, vy, vz));
@@ -196,16 +204,51 @@ public final class MaiCast {
         MaiSkillFx.burst(player, charge, range);
     }
 
-    /** 脉弹: a real projectile; {@code range} sets how long it flies before fizzling. */
+    /**
+     * 脉弹: 御器齐射. The volley — one bolt per 倍率 step (×3 fires three, ×10 fires ten) — circles the
+     * caster once, then releases along the look direction and locks onto the best-centered entity
+     * within 20 blocks. Holding a weapon shapes the bolts after it and its attack damage feeds the
+     * hit; empty hand falls back to the plain orb. Total damage is split by √count so a volley is
+     * wider, not ten times as lethal.
+     */
     private static void projectile(ServerPlayer player, MaiSkill skill, float effectScale, int charge) {
         ServerLevel level = player.serverLevel();
-        float speed = 1.6F;
+        int count = MaiCombo.clampCharge(charge);
         float range = skill.range() <= 0.0F ? 16.0F : skill.range();
-        MaiBolt bolt = new MaiBolt(level, player, skill.power() * effectScale, charge, Math.round(range / speed));
-        bolt.setPos(player.getX(), player.getEyeY() - 0.2D, player.getZ());
-        bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, speed, 0.0F);
-        level.addFreshEntity(bolt);
+        ItemStack held = player.getMainHandItem();
+        float total = skill.power() * effectScale + (float) (weaponDamage(held) * 0.8D);
+        float perBolt = (float) (total / Math.sqrt(count));
+        int life = Math.round(range / MaiBolt.FLIGHT_SPEED);
+        for (int i = 0; i < count; i++) {
+            MaiBolt bolt = new MaiBolt(level, player, perBolt, charge, life);
+            bolt.setVisualItem(held);
+            bolt.setPos(player.getX(), player.getEyeY() - 0.2D, player.getZ());
+            bolt.beginOrbit(Math.PI * 2.0D * i / count);
+            level.addFreshEntity(bolt);
+        }
         MaiSkillFx.boltCast(player, charge);
+        // The volley whistles loose as the circle releases: one drawn-out 咻.
+        MaiFxSequencer.schedule(level, MaiBolt.ORBIT_TICKS + 1, frame -> {
+            if (frame == MaiBolt.ORBIT_TICKS) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 0.9F, 1.1F);
+            }
+        });
+    }
+
+    /** Sum of the held item's mainhand attack-damage modifiers; 0 for an empty hand or a non-weapon. */
+    private static double weaponDamage(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return 0.0D;
+        }
+        double bonus = 0.0D;
+        Multimap<Attribute, AttributeModifier> modifiers = stack.getAttributeModifiers(EquipmentSlot.MAINHAND);
+        for (AttributeModifier modifier : modifiers.get(Attributes.ATTACK_DAMAGE)) {
+            if (modifier.getOperation() == AttributeModifier.Operation.ADDITION) {
+                bonus += modifier.getAmount();
+            }
+        }
+        return Math.max(0.0D, bonus);
     }
 
     /** 脉冲: a forward shockwave; {@code range} is how far it rolls. */

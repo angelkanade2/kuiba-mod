@@ -1,42 +1,42 @@
 package com.kuiba.mai.payload;
 
+import java.util.function.Supplier;
+
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
+
 import java.util.Optional;
 
-import com.kuiba.Kuiba;
 import com.kuiba.mai.MaiRitual;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record StartRitualPayload(boolean start, Optional<BlockPos> altar) implements CustomPacketPayload {
-    public static final Type<StartRitualPayload> TYPE = new Type<>(Kuiba.id("start_ritual"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, StartRitualPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL,
-            StartRitualPayload::start,
-            ByteBufCodecs.optional(BlockPos.STREAM_CODEC),
-            StartRitualPayload::altar,
-            StartRitualPayload::new);
+public record StartRitualPayload(boolean start, Optional<BlockPos> altar) {
+    public static void encode(StartRitualPayload msg, FriendlyByteBuf buf) {
+        buf.writeBoolean(msg.start());
+        buf.writeBoolean(msg.altar().isPresent());
+        msg.altar().ifPresent(buf::writeBlockPos);
+    }
 
-    public static void handle(StartRitualPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)) {
+    public static StartRitualPayload decode(FriendlyByteBuf buf) {
+        boolean start = buf.readBoolean();
+        Optional<BlockPos> altar = buf.readBoolean() ? Optional.of(buf.readBlockPos()) : Optional.empty();
+        return new StartRitualPayload(start, altar);
+    }
+
+    public static void handle(StartRitualPayload msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if (player == null) {
                 return;
             }
-            if (payload.start()) {
-                MaiRitual.tryStart(player, payload.altar().orElse(null));
+            if (msg.start()) {
+                MaiRitual.tryStart(player, msg.altar().orElse(null));
             } else {
                 MaiRitual.cancel(player, "packet");
             }
         });
-    }
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+        ctx.get().setPacketHandled(true);
     }
 }

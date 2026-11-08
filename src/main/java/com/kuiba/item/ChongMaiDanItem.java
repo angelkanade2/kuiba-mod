@@ -38,7 +38,7 @@ public class ChongMaiDanItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.kuiba.chong_mai_dan.tip").withStyle(ChatFormatting.GRAY));
     }
 }

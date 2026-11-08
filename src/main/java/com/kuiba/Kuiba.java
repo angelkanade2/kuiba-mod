@@ -6,47 +6,64 @@ import com.kuiba.core.KuibaDrops;
 import com.kuiba.core.KuibaNetwork;
 import com.kuiba.core.KuibaServerConfig;
 import com.kuiba.core.MaiAttachments;
+import com.kuiba.core.MaiGateHosts;
 import com.kuiba.entity.KuibaEntities;
-import com.kuiba.item.KuibaComponents;
 import com.kuiba.item.KuibaItems;
 import com.kuiba.mai.advancement.GateReachedTrigger;
 import com.kuiba.mai.event.MaiGameEvents;
+import com.kuiba.test.KuibaGameTests;
 import com.kuiba.wenyao.KuibaCommands;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.ModLoadingContext;
 
 @Mod(Kuiba.MOD_ID)
 public class Kuiba {
     public static final String MOD_ID = "kuiba";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public Kuiba(IEventBus modBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.SERVER, KuibaServerConfig.SPEC, "kuiba-server.toml");
+    public Kuiba() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, KuibaServerConfig.SPEC, "kuiba-server.toml");
 
-        KuibaComponents.COMPONENTS.register(modBus);
-        KuibaItems.ARMOR_MATERIALS.register(modBus);
         KuibaItems.ITEMS.register(modBus);
         KuibaItems.TABS.register(modBus);
-        MaiAttachments.ATTACHMENT_TYPES.register(modBus);
-        GateReachedTrigger.TRIGGERS.register(modBus);
         KuibaSounds.SOUND_EVENTS.register(modBus);
         KuibaEntities.ENTITY_TYPES.register(modBus);
+        modBus.addListener(MaiAttachments::registerCapabilities);
+        modBus.addListener(KuibaGameTests::register);
 
-        modBus.addListener(KuibaNetwork::register);
-        NeoForge.EVENT_BUS.register(MaiGameEvents.class);
-        NeoForge.EVENT_BUS.register(KuibaDrops.class);
-        NeoForge.EVENT_BUS.addListener(KuibaCommands::register);
+        KuibaNetwork.register();
+        GateReachedTrigger.register();
 
-        LOGGER.info("魁拔 (kuiba) M1 脉门骨架已加载");
+        MinecraftForge.EVENT_BUS.register(MaiAttachments.class);
+        MinecraftForge.EVENT_BUS.register(MaiGameEvents.class);
+        MinecraftForge.EVENT_BUS.register(MaiGateHosts.class);
+        MinecraftForge.EVENT_BUS.register(KuibaDrops.class);
+        MinecraftForge.EVENT_BUS.addListener(KuibaCommands::register);
+
+        LOGGER.info("魁拔 (kuiba) 1.20.1 Forge 已加载");
     }
 
     public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+        return new ResourceLocation(MOD_ID, path);
+    }
+
+    /** {@code null} when {@code raw} is not a valid resource location. */
+    public static ResourceLocation parse(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        try {
+            return new ResourceLocation(raw);
+        } catch (RuntimeException exception) {
+            return null;
+        }
     }
 }

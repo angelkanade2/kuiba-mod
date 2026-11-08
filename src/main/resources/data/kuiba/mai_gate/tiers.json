@@ -29,12 +29,8 @@
         "duration_ticks": 80,
         "ingredients": [
           {
-            "count": 6,
-            "item": "kuiba:mai_crystal"
-          },
-          {
-            "count": 4,
-            "tag": "minecraft:logs"
+            "count": 8,
+            "item": "kuiba:mai_shard"
           }
         ]
       }
@@ -61,16 +57,8 @@
         "duration_ticks": 120,
         "ingredients": [
           {
-            "count": 10,
-            "item": "kuiba:mai_crystal"
-          },
-          {
             "count": 16,
-            "item": "minecraft:cobblestone"
-          },
-          {
-            "count": 4,
-            "item": "minecraft:string"
+            "item": "kuiba:mai_shard"
           }
         ]
       }
@@ -97,12 +85,8 @@
         "duration_ticks": 160,
         "ingredients": [
           {
-            "count": 8,
-            "item": "minecraft:leather"
-          },
-          {
-            "count": 8,
-            "item": "kuiba:mai_crystal"
+            "count": 32,
+            "item": "kuiba:mai_shard"
           }
         ]
       }
@@ -129,12 +113,8 @@
         "duration_ticks": 200,
         "ingredients": [
           {
-            "count": 12,
-            "item": "minecraft:leather"
-          },
-          {
-            "count": 10,
-            "item": "kuiba:mai_crystal"
+            "count": 64,
+            "item": "kuiba:mai_shard"
           }
         ]
       }
@@ -161,16 +141,12 @@
         "duration_ticks": 240,
         "ingredients": [
           {
-            "count": 4,
-            "item": "kuiba:mai_shard"
-          },
-          {
-            "count": 12,
+            "count": 8,
             "item": "kuiba:mai_crystal"
           },
           {
-            "count": 8,
-            "item": "minecraft:string"
+            "count": 128,
+            "item": "kuiba:mai_shard"
           }
         ]
       }
@@ -197,11 +173,11 @@
         "duration_ticks": 300,
         "ingredients": [
           {
-            "count": 1,
-            "item": "kuiba:mai_core"
+            "count": 16,
+            "item": "kuiba:mai_crystal"
           },
           {
-            "count": 4,
+            "count": 256,
             "item": "kuiba:mai_shard"
           }
         ]
@@ -229,11 +205,15 @@
         "duration_ticks": 360,
         "ingredients": [
           {
-            "count": 2,
+            "count": 8,
             "item": "kuiba:mai_core"
           },
           {
-            "count": 8,
+            "count": 32,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 256,
             "item": "kuiba:mai_shard"
           }
         ]
@@ -261,16 +241,16 @@
         "duration_ticks": 420,
         "ingredients": [
           {
-            "count": 3,
+            "count": 16,
             "item": "kuiba:mai_core"
           },
           {
-            "count": 12,
-            "item": "kuiba:mai_shard"
+            "count": 64,
+            "item": "kuiba:mai_crystal"
           },
           {
-            "count": 16,
-            "item": "kuiba:mai_crystal"
+            "count": 256,
+            "item": "kuiba:mai_shard"
           }
         ]
       }
@@ -297,11 +277,15 @@
         "duration_ticks": 480,
         "ingredients": [
           {
-            "count": 4,
+            "count": 32,
             "item": "kuiba:mai_core"
           },
           {
-            "count": 16,
+            "count": 128,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 256,
             "item": "kuiba:mai_shard"
           }
         ]
@@ -329,11 +313,15 @@
         "duration_ticks": 560,
         "ingredients": [
           {
-            "count": 6,
+            "count": 64,
             "item": "kuiba:mai_core"
           },
           {
-            "count": 20,
+            "count": 256,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 256,
             "item": "kuiba:mai_shard"
           }
         ]
@@ -361,11 +349,15 @@
         "duration_ticks": 640,
         "ingredients": [
           {
-            "count": 8,
+            "count": 128,
             "item": "kuiba:mai_core"
           },
           {
-            "count": 24,
+            "count": 256,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 256,
             "item": "kuiba:mai_shard"
           }
         ]
@@ -393,11 +385,15 @@
         "duration_ticks": 720,
         "ingredients": [
           {
-            "count": 12,
+            "count": 256,
             "item": "kuiba:mai_core"
           },
           {
-            "count": 32,
+            "count": 256,
+            "item": "kuiba:mai_crystal"
+          },
+          {
+            "count": 256,
             "item": "kuiba:mai_shard"
           }
         ]

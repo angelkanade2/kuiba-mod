@@ -11,7 +11,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -144,7 +143,7 @@ public final class MaiRitual {
     }
 
     private static void sendProgress(ServerPlayer player, float progress, boolean cancelled) {
-        player.connection.send(new ClientboundCustomPayloadPacket(new RitualProgressPayload(progress, cancelled)));
+        com.kuiba.core.KuibaNetwork.sendToPlayer(player, new RitualProgressPayload(progress, cancelled));
     }
 
     private static boolean hasIngredients(ServerPlayer player, MaiTiers.RitualDef ritual) {

@@ -13,6 +13,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.kuiba.Kuiba;
 import com.kuiba.item.KuibaComponents;
+import net.minecraft.world.item.Items;
 import com.kuiba.mai.MaiApi;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -40,7 +41,6 @@ public final class WeaponArts extends SimpleJsonResourceReloadListener {
     // GSON must be initialised before the listener instances that pass it to super().
     private static final Gson GSON = new Gson();
     public static final WeaponArts SERVER = new WeaponArts();
-    public static final WeaponArts CLIENT = new WeaponArts();
     public static final ResourceKey<DamageType> MAI_WEAPON = ResourceKey.create(Registries.DAMAGE_TYPE, Kuiba.id("mai_weapon"));
 
     private static volatile Map<ResourceLocation, Art> byId = Map.of();
@@ -55,7 +55,7 @@ public final class WeaponArts extends SimpleJsonResourceReloadListener {
 
     public static void tryCast(ServerPlayer player) {
         ItemStack stack = player.getMainHandItem();
-        ResourceLocation artId = stack.get(KuibaComponents.WEAPON_ART.get());
+        ResourceLocation artId = KuibaComponents.weaponArt(stack);
         if (artId == null) {
             player.displayClientMessage(Component.translatable("message.kuiba.art.none"), true);
             return;
@@ -67,7 +67,7 @@ public final class WeaponArts extends SimpleJsonResourceReloadListener {
         }
         if (art.weapon() != null) {
             Item expected = BuiltInRegistries.ITEM.get(art.weapon());
-            if (expected == null || !stack.is(expected)) {
+            if (expected == null || expected == Items.AIR || !stack.is(expected)) {
                 player.displayClientMessage(Component.translatable("message.kuiba.art.none"), true);
                 return;
             }
@@ -105,7 +105,7 @@ public final class WeaponArts extends SimpleJsonResourceReloadListener {
         Vec3 from = player.position();
         Vec3 to = clipForward(player, from, look, distance);
         player.teleportTo(to.x, to.y, to.z);
-        player.resetFallDistance();
+        player.fallDistance = 0.0F;
         player.hurtMarked = true;
         DamageSource source = source(player);
         AABB box = new AABB(from, to).inflate(0.8D);
@@ -180,7 +180,7 @@ public final class WeaponArts extends SimpleJsonResourceReloadListener {
     }
 
     private static @Nullable Art parse(ResourceLocation file, JsonObject json) {
-        ResourceLocation id = json.has("id") ? ResourceLocation.tryParse(json.get("id").getAsString()) : file;
+        ResourceLocation id = json.has("id") ? com.kuiba.Kuiba.parse(json.get("id").getAsString()) : file;
         if (id == null) {
             return null;
         }
@@ -196,7 +196,7 @@ public final class WeaponArts extends SimpleJsonResourceReloadListener {
         float power = json.has("power") ? json.get("power").getAsFloat() : 8.0F;
         ResourceLocation weapon = null;
         if (json.has("weapon")) {
-            weapon = ResourceLocation.tryParse(json.get("weapon").getAsString());
+            weapon = com.kuiba.Kuiba.parse(json.get("weapon").getAsString());
         }
         return new Art(id, gate, cost, cooldown, cast, range, power, weapon);
     }

@@ -1,5 +1,6 @@
 package com.kuiba.mai.client;
 
+import net.minecraft.util.Mth;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -79,7 +80,7 @@ public final class MaiClientState {
     }
 
     public static void onAura(int entityId, int gate, float intensity) {
-        AURAS.put(entityId, new Aura(gate, Math.clamp(intensity, 0.0F, 1.0F)));
+        AURAS.put(entityId, new Aura(gate, Mth.clamp(intensity, 0.0F, 1.0F)));
     }
 
     public static @Nullable Aura aura(int entityId) {

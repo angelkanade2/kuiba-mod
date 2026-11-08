@@ -11,6 +11,7 @@ import com.kuiba.mai.MaiCombo;
 import com.kuiba.mai.MaiData;
 import com.kuiba.mai.MaiSkill;
 import com.kuiba.mai.MaiSkills;
+import com.kuiba.mai.payload.FixedComboPayload;
 import com.kuiba.mai.payload.SaveComboPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -19,7 +20,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.kuiba.core.KuibaNetwork;
 
 /**
  * Combo editor. Left column: the eight named presets, each with a 圆盘 marker. Right column: the
@@ -33,11 +34,13 @@ public class MaiComboScreen extends Screen {
     private static final int ROW_W = 132;
     private static final int ROW_H = 20;
     private static final int ROW_PITCH = 22;
-    private static final int MODE_W = 52;
     private static final int BOX_W = 44;
     private static final int BOX_H = 40;
     private static final int BOX_PITCH = 46;
     private static final int CHARGE_W = 30;
+    /** Fixed-combo selector chips (which preset the X key casts). */
+    private static final int FIXED_CHIP_W = 26;
+    private static final int FIXED_CHIP_PITCH = 28;
     private static final int CHARGE_PITCH = 32;
     private static final int CELL = 20;
     private static final int GRID_COLS = 11;
@@ -56,7 +59,6 @@ public class MaiComboScreen extends Screen {
 
     private final List<List<MaiCombo.Step>> work = new ArrayList<>();
     private final int[] gaps = new int[MaiCombo.COMBO_COUNT];
-    private final boolean[] sequence = new boolean[MaiCombo.COMBO_COUNT];
     private final String[] names = new String[MaiCombo.COMBO_COUNT];
     private final boolean[] onWheel = new boolean[MaiCombo.COMBO_COUNT];
     private int slot;
@@ -84,14 +86,13 @@ public class MaiComboScreen extends Screen {
                 MaiCombo.Preset preset = mai.combo(i);
                 work.add(new ArrayList<>(preset.steps()));
                 gaps[i] = preset.gapTicks();
-                sequence[i] = preset.steps().size() > 1;
                 names[i] = preset.name();
                 onWheel[i] = preset.onWheel();
             }
         }
         EditBox box = new EditBox(this.font, nameBoxX(), nameBoxY(), 160, 16, Component.translatable("screen.kuiba.combo.name"));
         box.setMaxLength(MaiCombo.NAME_MAX * 2);
-        box.setHint(Component.translatable("screen.kuiba.combo.name_hint").withColor(MUTED));
+        box.setHint(Component.translatable("screen.kuiba.combo.name_hint").withStyle(style -> style.withColor(MUTED)));
         box.setValue(names[slot] == null ? "" : names[slot]);
         box.setResponder(value -> names[slot] = value);
         nameBox = box;
@@ -104,19 +105,13 @@ public class MaiComboScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (this.minecraft == null) {
-            return;
-        }
-        if (this.minecraft.level == null) {
-            this.renderPanorama(graphics, partialTick);
-        }
-        this.renderBlurredBackground(partialTick);
+    public void renderBackground(GuiGraphics graphics) {
+        graphics.fill(0, 0, this.width, this.height, 0x88080C12);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        this.renderBackground(graphics);
         if (this.minecraft == null || this.minecraft.player == null || work.isEmpty()) {
             return;
         }
@@ -165,7 +160,30 @@ public class MaiComboScreen extends Screen {
                 tooltip.add(Component.translatable("screen.kuiba.combo.slot", i + 1,
                         i == 1 ? MaiKeys.comboKeyName(1) : MaiKeys.castKeyName()));
                 tooltip.add(Component.translatable(work.get(i).isEmpty() ? "hud.kuiba.combo.empty" : "screen.kuiba.combo.preview_sequence",
-                        Math.round(MaiCombo.totalCost(preset(i))), Math.round(mai.current())).withColor(MUTED));
+                        Math.round(MaiCombo.totalCost(preset(i))), Math.round(mai.current())).withStyle(style -> style.withColor(MUTED)));
+            }
+        }
+
+        // ---- 固定连招（X 键）: 选哪一条被固定键施放 ----
+        int fixedY = top() + 212;
+        String fixedLabel = Component.translatable("screen.kuiba.combo.fixed", MaiKeys.comboKeyName(1)).getString();
+        graphics.drawString(this.font, fixedLabel, left + 12, fixedY + 5, 0xFF9AD0FF, false);
+        for (int i = 0; i < MaiCombo.COMBO_COUNT; i++) {
+            int cx = fixedChipX(i);
+            boolean active = mai.fixedCombo() == i;
+            boolean hover = inside(mouseX, mouseY, cx, fixedY, FIXED_CHIP_W, 16);
+            graphics.fill(cx, fixedY, cx + FIXED_CHIP_W, fixedY + 16, active ? 0xFF6A4C0F : (hover ? ROW_HOVER : ROW_IDLE));
+            if (active) {
+                graphics.fill(cx, fixedY, cx + FIXED_CHIP_W, fixedY + 1, GOLD);
+            }
+            graphics.drawCenteredString(this.font, Integer.toString(i + 1), cx + FIXED_CHIP_W / 2, fixedY + 4,
+                    active ? GOLD : CYAN_TEXT);
+            if (hover) {
+                MaiCombo.Preset candidate = preset(i);
+                tooltip = new ArrayList<>();
+                tooltip.add(Component.translatable("screen.kuiba.combo.fixed_this", i + 1).withStyle(style -> style.withColor(GOLD)));
+                tooltip.add(Component.translatable(candidate.steps().isEmpty() ? "hud.kuiba.combo.empty" : "screen.kuiba.combo.preview_sequence",
+                        Math.round(MaiCombo.totalCost(candidate)), Math.round(mai.current())).withStyle(style -> style.withColor(MUTED)));
             }
         }
 
@@ -173,20 +191,12 @@ public class MaiComboScreen extends Screen {
         // Name box is a widget; frame it so it reads as part of the panel.
         MaiHud.frame(graphics, nameBoxX() - 1, nameBoxY() - 1, 162, 18, 0xFF3A6EA5);
 
-        for (int m = 0; m < 2; m++) {
-            int mx = modeX(m);
-            int my = modeY();
-            boolean active = (m == 1) == sequence[slot];
-            boolean hover = inside(mouseX, mouseY, mx, my, MODE_W, BUTTON_H);
-            graphics.fill(mx, my, mx + MODE_W, my + BUTTON_H, active ? 0xFF2E6B4F : (hover ? ROW_HOVER : ROW_IDLE));
-            Component label = Component.translatable(m == 0 ? "screen.kuiba.combo.mode_amplify" : "screen.kuiba.combo.mode_sequence");
-            graphics.drawCenteredString(this.font, label, mx + MODE_W / 2, my + 5, active ? 0xFFFFFFFF : CYAN_TEXT);
-        }
-        graphics.drawString(this.font, Component.translatable(sequence[slot] ? "screen.kuiba.combo.desc_sequence" : "screen.kuiba.combo.desc_amplify"),
-                rightX(), top() + 66, MUTED, false);
+        // 连招只有一种形态：最多 5 步的序列.
+        graphics.drawString(this.font, Component.translatable("screen.kuiba.combo.desc_sequence"),
+                rightX(), top() + 48, MUTED, false);
 
         List<MaiCombo.Step> steps = work.get(slot);
-        int boxes = sequence[slot] ? MaiCombo.MAX_STEPS : 1;
+        int boxes = MaiCombo.MAX_STEPS;
         if (activeStep >= steps.size()) {
             activeStep = Math.max(0, steps.size() - 1);
         }
@@ -195,7 +205,7 @@ public class MaiComboScreen extends Screen {
             if (tip != null) {
                 tooltip = tip;
             }
-            if (sequence[slot] && i + 1 < boxes) {
+            if (i + 1 < boxes) {
                 int ax = boxX(i) + BOX_W;
                 int color = i + 1 < steps.size() ? GOLD : 0xFF2A3238;
                 graphics.fill(ax + 2, boxY() + 16, ax + 3, boxY() + 24, color);
@@ -225,7 +235,7 @@ public class MaiComboScreen extends Screen {
         }
 
         int rowY = gapRowY();
-        if (sequence[slot]) {
+        {
             graphics.drawString(this.font, Component.translatable("screen.kuiba.combo.gap"), rightX(), rowY + 3, CYAN_TEXT, false);
             smallButton(graphics, "-", gapMinusX(), rowY, mouseX, mouseY, gaps[slot] > 0);
             String seconds = String.format(Locale.ROOT, "%.2f", gaps[slot] / 20.0F);
@@ -244,7 +254,7 @@ public class MaiComboScreen extends Screen {
             tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("screen.kuiba.combo.put_wheel_tip", MaiKeys.wheelKeyName()));
             if (steps.isEmpty()) {
-                tooltip.add(Component.translatable("screen.kuiba.combo.put_wheel_empty").withColor(LOW));
+                tooltip.add(Component.translatable("screen.kuiba.combo.put_wheel_empty").withStyle(style -> style.withColor(LOW)));
             }
         }
 
@@ -253,19 +263,16 @@ public class MaiComboScreen extends Screen {
         Component costLine;
         if (preview.steps().isEmpty()) {
             costLine = Component.translatable("screen.kuiba.combo.no_steps");
-        } else if (!sequence[slot]) {
-            String effect = String.format(Locale.ROOT, "%.2f", MaiCombo.effectMultiplier(preview.steps().get(0).charge()));
-            costLine = Component.translatable("screen.kuiba.combo.preview_amplify", Math.round(cost), effect);
         } else {
             costLine = Component.translatable("screen.kuiba.combo.preview_sequence", Math.round(cost), Math.round(mai.current()));
         }
         int costColor = preview.steps().isEmpty() ? MUTED : (mai.current() + 0.001F < cost ? LOW : 0xFF7CFFD4);
-        graphics.drawString(this.font, costLine, left + PANEL_W - 12 - this.font.width(costLine), top() + 158, costColor, false);
+        graphics.drawString(this.font, costLine, left + PANEL_W - 12 - this.font.width(costLine), top() + 146, costColor, false);
 
-        graphics.drawString(this.font, Component.translatable("screen.kuiba.combo.pool"), rightX(), top() + 172, 0xFF9AD0FF, false);
+        graphics.drawString(this.font, Component.translatable("screen.kuiba.combo.pool"), rightX(), top() + 160, 0xFF9AD0FF, false);
         List<MaiSkill> pool = pool(mai);
         if (pool.isEmpty()) {
-            graphics.drawString(this.font, Component.translatable("screen.kuiba.combo.pool_empty"), rightX(), top() + 186, MUTED, false);
+            graphics.drawString(this.font, Component.translatable("screen.kuiba.combo.pool_empty"), rightX(), top() + 174, MUTED, false);
         }
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -338,7 +345,7 @@ public class MaiComboScreen extends Screen {
         if (skill != null && inside(mouseX, mouseY, x, y, BOX_W, BOX_H)) {
             List<Component> tip = new ArrayList<>(MaiSkillTip.lines(this.font, skill));
             tip.add(Component.translatable("screen.kuiba.combo.step_tip", index + 1,
-                    Math.round(skill.cost() * MaiCombo.costMultiplier(step.charge()))).withColor(MUTED));
+                    Math.round(skill.cost() * MaiCombo.costMultiplier(step.charge()))).withStyle(style -> style.withColor(MUTED)));
             return tip;
         }
         return null;
@@ -361,6 +368,13 @@ public class MaiComboScreen extends Screen {
         int left = left();
         int top = top();
 
+        int fixedY = top() + 212;
+        for (int i = 0; i < MaiCombo.COMBO_COUNT; i++) {
+            if (inside(mouseX, mouseY, fixedChipX(i), fixedY, FIXED_CHIP_W, 16)) {
+                KuibaNetwork.sendToServer(new FixedComboPayload(i));
+                return true;
+            }
+        }
         for (int i = 0; i < MaiCombo.COMBO_COUNT; i++) {
             if (inside(mouseX, mouseY, left + 12, rowY(i), ROW_W, ROW_H)) {
                 slot = i;
@@ -368,19 +382,9 @@ public class MaiComboScreen extends Screen {
                 return true;
             }
         }
-        for (int m = 0; m < 2; m++) {
-            if (inside(mouseX, mouseY, modeX(m), modeY(), MODE_W, BUTTON_H)) {
-                sequence[slot] = m == 1;
-                List<MaiCombo.Step> steps = work.get(slot);
-                if (!sequence[slot] && steps.size() > 1) {
-                    steps.subList(1, steps.size()).clear();
-                }
-                return true;
-            }
-        }
 
         List<MaiCombo.Step> steps = work.get(slot);
-        int boxes = sequence[slot] ? MaiCombo.MAX_STEPS : 1;
+        int boxes = MaiCombo.MAX_STEPS;
         for (int i = 0; i < Math.min(boxes, steps.size()); i++) {
             int bx = boxX(i);
             if (!inside(mouseX, mouseY, bx, boxY(), BOX_W, BOX_H)) {
@@ -406,7 +410,7 @@ public class MaiComboScreen extends Screen {
         }
 
         int rowY = gapRowY();
-        if (sequence[slot]) {
+        {
             if (inside(mouseX, mouseY, gapMinusX(), rowY, 14, 14)) {
                 gaps[slot] = Math.max(0, gaps[slot] - GAP_STEP);
                 return true;
@@ -472,13 +476,6 @@ public class MaiComboScreen extends Screen {
 
     private void pick(MaiSkill skill) {
         List<MaiCombo.Step> steps = work.get(slot);
-        if (!sequence[slot]) {
-            int charge = steps.isEmpty() ? 1 : steps.get(0).charge();
-            steps.clear();
-            steps.add(new MaiCombo.Step(skill.id(), charge));
-            activeStep = 0;
-            return;
-        }
         if (steps.size() >= MaiCombo.MAX_STEPS) {
             setStatus(Component.translatable("screen.kuiba.combo.full", MaiCombo.MAX_STEPS), LOW);
             return;
@@ -507,7 +504,7 @@ public class MaiComboScreen extends Screen {
             if (!dirty(mai, i)) {
                 continue;
             }
-            PacketDistributor.sendToServer(new SaveComboPayload(i, preset(i)));
+            KuibaNetwork.sendToServer(new SaveComboPayload(i, preset(i)));
             sent++;
         }
         if (sent == 0) {
@@ -577,16 +574,9 @@ public class MaiComboScreen extends Screen {
         return left() + 156;
     }
 
-    private int modeX(int mode) {
-        return rightX() + mode * (MODE_W + 4);
-    }
-
-    private int modeY() {
-        return top() + 44;
-    }
 
     private int gapRowY() {
-        return top() + 140;
+        return top() + 128;
     }
 
     private int nameBoxX() {
@@ -606,7 +596,7 @@ public class MaiComboScreen extends Screen {
     }
 
     private int boxY() {
-        return top() + 76;
+        return top() + 64;
     }
 
     private int removeX(int boxX) {
@@ -614,7 +604,7 @@ public class MaiComboScreen extends Screen {
     }
 
     private int chargeY() {
-        return top() + 120;
+        return top() + 108;
     }
 
     /** Chip {@code index} of {@link MaiCombo#CHARGE_LEVELS}. */
@@ -631,7 +621,12 @@ public class MaiComboScreen extends Screen {
     }
 
     private int cellY(int index) {
-        return top() + 184 + (index / GRID_COLS) * CELL;
+        return top() + 172 + (index / GRID_COLS) * CELL;
+    }
+
+    private int fixedChipX(int index) {
+        String label = Component.translatable("screen.kuiba.combo.fixed", MaiKeys.comboKeyName(1)).getString();
+        return left() + 12 + this.font.width(label) + 8 + index * FIXED_CHIP_PITCH;
     }
 
     private int buttonY() {

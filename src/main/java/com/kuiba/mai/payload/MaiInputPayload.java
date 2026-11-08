@@ -1,42 +1,34 @@
 package com.kuiba.mai.payload;
 
-import com.kuiba.Kuiba;
+import java.util.function.Supplier;
+
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
+
 import com.kuiba.mai.MaiApi;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * C→S: the movement keys changed. The server cannot read normal WASD input for a standing player, so
- * 脉闪 needs this pushed live to build its direction on every dash, including the later steps of a combo.
- * <p>
- * {@code forward} is W(+1) / S(-1), {@code strafe} is A(+1, left) / D(-1, right), both in {@code -1..1}.
- * Sent only when the pair changes, so it is one packet per key press/release, not per tick.
+ * C→S: the movement keys changed. {@code forward} is W(+1) / S(-1), {@code strafe} is A(+1) / D(-1).
  */
-public record MaiInputPayload(int forward, int strafe) implements CustomPacketPayload {
-    public static final Type<MaiInputPayload> TYPE = new Type<>(Kuiba.id("mai_input"));
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, MaiInputPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT,
-            MaiInputPayload::forward,
-            ByteBufCodecs.VAR_INT,
-            MaiInputPayload::strafe,
-            MaiInputPayload::new);
-
-    public static void handle(MaiInputPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player) {
-                MaiApi.data(player).setInput(payload.forward(), payload.strafe());
-            }
-        });
+public record MaiInputPayload(int forward, int strafe) {
+    public static void encode(MaiInputPayload msg, FriendlyByteBuf buf) {
+        buf.writeVarInt(msg.forward());
+        buf.writeVarInt(msg.strafe());
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static MaiInputPayload decode(FriendlyByteBuf buf) {
+        return new MaiInputPayload(buf.readVarInt(), buf.readVarInt());
+    }
+
+    public static void handle(MaiInputPayload msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if (player != null) {
+                MaiApi.data(player).setInput(msg.forward(), msg.strafe());
+            }
+        });
+        ctx.get().setPacketHandled(true);
     }
 }

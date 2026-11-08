@@ -33,9 +33,9 @@ public enum Meridian {
     SHEN_PO_XU("shen_po_xu"),
     /** 比圆 — crown, a halo above the head. */
     BI_YUAN("bi_yuan"),
-    /** 启明 — back of the head, right. */
+    /** 启明 — right side of the head, by the ear. */
     QI_MING("qi_ming"),
-    /** 心断空 — back of the head, left. */
+    /** 心断空 — left side of the head, by the ear. */
     XIN_DUAN_KONG("xin_duan_kong");
 
     private final String id;

@@ -1,6 +1,8 @@
 {
   "pack": {
-    "description": "kuiba resources",
-    "pack_format": 34
+    "description": {
+      "text": "kuiba resources"
+    },
+    "pack_format": 15
   }
 }

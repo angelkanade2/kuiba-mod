@@ -2,7 +2,7 @@ package com.kuiba.wenyao;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.kuiba.Kuiba;
+import com.kuiba.core.KuibaIds;
 import com.kuiba.item.KuibaComponents;
 import com.kuiba.item.KuibaItems;
 import com.kuiba.item.MaiWeaponItem;
@@ -24,7 +24,7 @@ import net.minecraft.world.item.ItemStack;
  * Weapon arts are cast by right-clicking a mod weapon in the main hand.
  */
 public final class WenyaoApi {
-    public static final ResourceLocation MELEE_MODIFIER = Kuiba.id("wenyao_melee");
+    public static final java.util.UUID MELEE_MODIFIER = KuibaIds.WENYAO_MELEE;
     private static final float PULSE_RESONANCE = 0.97F;
     private static final float ART_POWER = 1.1F;
     /** Two weave pieces slow decay to 90% of max/90. Not a regen bonus. */
@@ -40,7 +40,7 @@ public final class WenyaoApi {
         if (stack.isEmpty()) {
             return null;
         }
-        return stack.get(KuibaComponents.WENYAO_TIER.get());
+        return KuibaComponents.wenyaoTier(stack);
     }
 
     /** Tier that is both slotted and allowed by the player's gate. */
@@ -108,8 +108,9 @@ public final class WenyaoApi {
         }
         attack.addTransientModifier(new AttributeModifier(
                 MELEE_MODIFIER,
+                "kuiba:wenyao_melee",
                 tier.meleeBonus(),
-                AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+                AttributeModifier.Operation.MULTIPLY_BASE));
     }
 
     public static void onBladeHit(ServerPlayer player) {

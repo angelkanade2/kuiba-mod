@@ -1,5 +1,6 @@
 package com.kuiba.mai;
 
+import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,14 +13,13 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraftforge.common.util.INBTSerializable;
 
 /**
  * Persisted mai state. {@code max} is intentionally not written.
@@ -49,6 +49,8 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
     private final MaiCombo.Preset[] combos = emptyCombos();
     /** Preset index currently picked on the wheel, or {@link MaiCombo#NO_COMBO}. Persisted. */
     private int selectedCombo = MaiCombo.NO_COMBO;
+    /** Preset index the fixed combo key casts, independent of the wheel pick. Persisted. */
+    private int fixedCombo = 1;
     /**
      * Ephemeral sequence cursor. Not written to NBT, so copyOnDeath does not keep it.
      * Cleared on death and disconnect.
@@ -71,7 +73,7 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
     }
 
     public void setGate(int gate) {
-        this.gate = Math.clamp(gate, 0, 12);
+        this.gate = Mth.clamp(gate, 0, 12);
     }
 
     public float current() {
@@ -280,7 +282,7 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
 
     private static void readCooldownMap(CompoundTag tag, Map<ResourceLocation, Integer> into) {
         for (String key : tag.getAllKeys()) {
-            ResourceLocation id = ResourceLocation.tryParse(key);
+            ResourceLocation id = com.kuiba.Kuiba.parse(key);
             if (id != null) {
                 into.put(id, tag.getInt(key));
             }
@@ -330,6 +332,17 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
         selectedCombo = index >= 0 && index < combos.length && !combos[index].empty() ? index : MaiCombo.NO_COMBO;
     }
 
+    /** Preset index the fixed combo key casts. Any slot is allowed, empty ones simply do nothing. */
+    public int fixedCombo() {
+        return fixedCombo;
+    }
+
+    public void setFixedCombo(int index) {
+        if (index >= 0 && index < combos.length) {
+            fixedCombo = index;
+        }
+    }
+
     /** Live client movement input, refreshed whenever the keys change. {@code -1 / 0 / 1} each. */
     public int inputForward() {
         return inputForward;
@@ -340,8 +353,8 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
     }
 
     public void setInput(int forward, int strafe) {
-        this.inputForward = Math.clamp(forward, -1, 1);
-        this.inputStrafe = Math.clamp(strafe, -1, 1);
+        this.inputForward = Mth.clamp(forward, -1, 1);
+        this.inputStrafe = Mth.clamp(strafe, -1, 1);
     }
 
     /** Game time until which fall damage is ignored. 0 means "no grace". Not persisted. */
@@ -389,7 +402,7 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
     }
 
     public void applySync(int gate, float current, float max, int backlashStacks, ResourceLocation[] equipped, Map<ResourceLocation, Integer> cooldowns, Set<ResourceLocation> unlocked) {
-        this.gate = Math.clamp(gate, 0, 12);
+        this.gate = Mth.clamp(gate, 0, 12);
         this.syncedMax = max;
         this.current = current;
         this.backlashStacks = backlashStacks;
@@ -404,7 +417,7 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
     }
 
     @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+    public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Gate", gate);
         tag.putFloat("Current", current);
@@ -447,10 +460,9 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
         }
 
         if (!wenyaoSlot.isEmpty()) {
-            Tag saved = wenyaoSlot.save(provider);
-            if (saved != null) {
-                tag.put("WenyaoSlot", saved);
-            }
+            CompoundTag saved = new CompoundTag();
+            wenyaoSlot.save(saved);
+            tag.put("WenyaoSlot", saved);
         }
 
         ListTag comboTag = new ListTag();
@@ -471,12 +483,13 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
         }
         tag.put("Combos", comboTag);
         tag.putInt("Selected", selectedCombo);
+        tag.putInt("FixedCombo", fixedCombo);
         return tag;
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-        gate = Math.clamp(tag.getInt("Gate"), 0, 12);
+    public void deserializeNBT(CompoundTag tag) {
+        gate = Mth.clamp(tag.getInt("Gate"), 0, 12);
         current = tag.getFloat("Current");
         initialized = tag.getBoolean("Initialized");
         backlashStacks = tag.getInt("BacklashStacks");
@@ -490,14 +503,14 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
         for (int i = 0; i < Math.min(EQUIPPED_SLOTS, equippedTag.size()); i++) {
             String raw = equippedTag.getString(i);
             if (!raw.isEmpty()) {
-                equipped[i] = ResourceLocation.tryParse(raw);
+                equipped[i] = com.kuiba.Kuiba.parse(raw);
             }
         }
 
         unlocked.clear();
         ListTag unlockedTag = tag.getList("Unlocked", Tag.TAG_STRING);
         for (int i = 0; i < unlockedTag.size(); i++) {
-            ResourceLocation id = ResourceLocation.tryParse(unlockedTag.getString(i));
+            ResourceLocation id = com.kuiba.Kuiba.parse(unlockedTag.getString(i));
             if (id != null) {
                 unlocked.add(id);
             }
@@ -526,7 +539,7 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
 
         wenyaoSlot = ItemStack.EMPTY;
         if (tag.contains("WenyaoSlot")) {
-            wenyaoSlot = ItemStack.parse(provider, tag.get("WenyaoSlot")).orElse(ItemStack.EMPTY);
+            wenyaoSlot = ItemStack.of(tag.getCompound("WenyaoSlot"));
         }
 
         for (int i = 0; i < combos.length; i++) {
@@ -539,6 +552,8 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
                 combos[i] = readCombo(comboTag.getCompound(i));
             }
         }
+        int savedFixed = tag.contains("FixedCombo") ? tag.getInt("FixedCombo") : 1;
+        fixedCombo = savedFixed >= 0 && savedFixed < combos.length ? savedFixed : 1;
         int savedSelected = tag.contains("Selected") ? tag.getInt("Selected") : MaiCombo.NO_COMBO;
         selectedCombo = savedSelected >= 0 && savedSelected < combos.length && !combos[savedSelected].empty()
                 ? savedSelected
@@ -559,7 +574,7 @@ public final class MaiData implements INBTSerializable<CompoundTag> {
         ListTag list = tag.getList("Steps", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size() && steps.size() < MaiCombo.MAX_STEPS; i++) {
             CompoundTag stepTag = list.getCompound(i);
-            ResourceLocation skill = ResourceLocation.tryParse(stepTag.getString("Skill"));
+            ResourceLocation skill = com.kuiba.Kuiba.parse(stepTag.getString("Skill"));
             if (skill == null) {
                 continue;
             }

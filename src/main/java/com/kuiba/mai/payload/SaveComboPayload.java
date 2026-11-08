@@ -2,42 +2,33 @@ package com.kuiba.mai.payload;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
-import com.kuiba.Kuiba;
 import com.kuiba.mai.MaiCombo;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.NetworkEvent;
 
 /**
  * C→S: save one named preset, including its 技能圆盘 placement.
  * The server re-checks the gate, unlocks, charge limits, and the name.
  */
-public record SaveComboPayload(int index, MaiCombo.Preset preset) implements CustomPacketPayload {
+public record SaveComboPayload(int index, MaiCombo.Preset preset) {
     /** Generous read cap; the server clamps the name to {@link MaiCombo#NAME_MAX} anyway. */
     private static final int NAME_WIRE_MAX = 256;
 
-    public static final Type<SaveComboPayload> TYPE = new Type<>(Kuiba.id("save_combo"));
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, SaveComboPayload> STREAM_CODEC = StreamCodec.ofMember(
-            SaveComboPayload::write,
-            SaveComboPayload::decode);
-
-    private void write(RegistryFriendlyByteBuf buf) {
-        buf.writeVarInt(index);
-        writePreset(buf, preset);
+    public static void encode(SaveComboPayload msg, FriendlyByteBuf buf) {
+        buf.writeVarInt(msg.index());
+        writePreset(buf, msg.preset());
     }
 
-    private static SaveComboPayload decode(RegistryFriendlyByteBuf buf) {
-        int index = buf.readVarInt();
-        return new SaveComboPayload(index, readPreset(buf));
+    public static SaveComboPayload decode(FriendlyByteBuf buf) {
+        return new SaveComboPayload(buf.readVarInt(), readPreset(buf));
     }
 
-    public static void writePreset(RegistryFriendlyByteBuf buf, MaiCombo.Preset preset) {
+    public static void writePreset(FriendlyByteBuf buf, MaiCombo.Preset preset) {
         MaiCombo.Preset safe = preset == null ? MaiCombo.Preset.EMPTY : preset;
         buf.writeUtf(safe.name(), NAME_WIRE_MAX);
         buf.writeVarInt(safe.gapTicks());
@@ -49,7 +40,7 @@ public record SaveComboPayload(int index, MaiCombo.Preset preset) implements Cus
         }
     }
 
-    public static MaiCombo.Preset readPreset(RegistryFriendlyByteBuf buf) {
+    public static MaiCombo.Preset readPreset(FriendlyByteBuf buf) {
         String name = buf.readUtf(NAME_WIRE_MAX);
         int gap = buf.readVarInt();
         boolean onWheel = buf.readBoolean();
@@ -63,16 +54,13 @@ public record SaveComboPayload(int index, MaiCombo.Preset preset) implements Cus
         return new MaiCombo.Preset(name, gap, onWheel, steps);
     }
 
-    public static void handle(SaveComboPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player) {
-                MaiCombo.save(player, payload.index(), payload.preset());
+    public static void handle(SaveComboPayload msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if (player != null) {
+                MaiCombo.save(player, msg.index(), msg.preset());
             }
         });
-    }
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+        ctx.get().setPacketHandled(true);
     }
 }
